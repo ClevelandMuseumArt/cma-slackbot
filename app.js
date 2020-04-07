@@ -18,6 +18,8 @@ var exhibitScheduled = false;
 var scheduledLocalDate; // TODO: needs to be updated in the intervals
 var scheduledExhibitInterval; // setInterval
 var scheduledPromptInterval; // setInterval
+var scheduledExhibitTimeout; // setTimeout
+var scheduledPromptTimeout; // setTimrout
 
 var lastArtIndex = 0;
 var postChannelId = "";
@@ -330,10 +332,11 @@ app.message("random", ({ message, say }) => {
           type: "button",
           text: {
             type: "plain_text",
-            text: "Visit",
+            text: "Visit Artwork",
             emoji: true
-          },          
-          url: item.url
+          },
+          url: item.url,
+          action_id: "visit_button"
         }
       }
     ]
@@ -426,7 +429,7 @@ function formatDate(date) {
 
 function getUserDate(tz_offset) {
   // What is going on here? - EH
-  
+
   var d = new Date();
   var withUserOffset = d.getTime() / 1000 + tz_offset;
   return new Date(withUserOffset * 1000);
@@ -488,6 +491,13 @@ async function calculateScheduledDate(
   //   proposedDate = new Date(epochProposed * 1000);
   // }
 
+  // go back 24 hours if proposed time is way ahead - due to time zone issues
+  if (proposedDate.getTime() / 1000 - tz_offset  - secondsInADay >  Date.now() / 1000) {
+    var epochProposed = proposedDate.getTime() / 1000.0;
+    epochProposed -= secondsInADay; //24hours in seconds
+    proposedDate = new Date(epochProposed * 1000);
+  }
+    
   // format to notify user of the choice
   var formattedLocalProposedDate = formatDate(proposedDate); // this is in user's local time
   await say(`Next schedule happens on ${formattedLocalProposedDate}.`);
@@ -563,6 +573,9 @@ app.command(
     // Acknowledge the command request
     ack();
 
+    clearInterval(scheduledExhibitInterval);
+    clearTimeout(scheduledExhibitTimeout);
+
     //// check if user is admin
     //     var isAdmin = await getIfAdmin(payload.user_id, context);
 
@@ -571,13 +584,15 @@ app.command(
     //       return;
     //     }
 
-    var input = command.text.split(':')
-   
+    var input = command.text.split(":");
+
     var inputHour = parseFloat(input[0]);
     var inputMinute = parseFloat(input[1]);
-    
-    console.log(`Set daily exhibition time at ${inputHour} hours, ${inputMinute} minutes`);
-    
+
+    console.log(
+      `Set daily exhibition time at ${inputHour} hours, ${inputMinute} minutes`
+    );
+
     // make sure to curb the numbers
     if (inputHour < 0 || inputHour > 24) {
       await say(`Please try again with a number between 0 and 24.`);
@@ -596,7 +611,7 @@ app.command(
     var timeDifference = nextScheduleDate.getTime() - current.getTime();
 
     // trigger the first exhibit, then the exhibit will keep the interval running
-    setTimeout(function() {
+    scheduledExhibitTimeout = setTimeout(function() {
       triggerFirstExhibit(context);
     }, timeDifference); // pass context to async function
   }
@@ -610,6 +625,9 @@ app.command(
     // Acknowledge the command request
     ack();
 
+    clearInterval(scheduledPromptInterval);
+    clearTimeout(scheduledPromptTimeout);
+
     //// check if user is admin
     //     var isAdmin = await getIfAdmin(payload.user_id, context);
 
@@ -618,13 +636,15 @@ app.command(
     //       return;
     //     }
 
-    var input = command.text.split(':')
-   
+    var input = command.text.split(":");
+
     var inputHour = parseFloat(input[0]);
     var inputMinute = parseFloat(input[1]);
-       
-    console.log(`Set daily prompt time at ${inputHour} hours, ${inputMinute} minutes`);
-    
+
+    console.log(
+      `Set daily prompt time at ${inputHour} hours, ${inputMinute} minutes`
+    );
+
     // make sure to curb the numbers
     if (inputHour < 0 || inputHour > 24) {
       await say(`Please try again with a number between 0 and 24.`);
@@ -643,7 +663,7 @@ app.command(
     var timeDifference = nextScheduleDate.getTime() - current.getTime();
 
     // trigger the first exhibit, then the exhibit will keep the interval running
-    setTimeout(function() {
+    scheduledPromptTimeout = setTimeout(function() {
       triggerFirstPrompt(payload, context);
     }, timeDifference); // pass context to async function
   }
@@ -670,6 +690,8 @@ app.command(
       // clear the interval
       clearInterval(scheduledExhibitInterval);
       clearInterval(scheduledPromptInterval);
+      clearTimeout(scheduledExhibitTimeout);
+      clearTimeout(scheduledPromptTimeout);
     } catch (error) {
       console.error(error);
     }
@@ -730,8 +752,8 @@ async function exhibitScheduledMessage(context, delayedMins) {
 
     for (var key in userData) {
       var thisUser = userData[key];
-      
-      if ('lastImgUrl' in thisUser) {
+
+      if ("lastImgUrl" in thisUser) {
         var title = thisUser.lastImgTitle;
         var img = thisUser.lastImgUrl;
         var creator = thisUser.lastImgCreator;
@@ -772,7 +794,8 @@ async function exhibitScheduledMessage(context, delayedMins) {
                   text: "Visit Artwork",
                   emoji: true
                 },
-                value: "visit_cma"
+                value: "visit_cma",
+                action_id: "visit_button"
               }
             }
           ]
@@ -780,6 +803,35 @@ async function exhibitScheduledMessage(context, delayedMins) {
       }
     }
 
+    // the delayed end statement
+    // Call the chat.scheduleMessage method with a token
+    const endResult = await app.client.chat.scheduleMessage({
+      // The token you used to initialize your app is stored in the `context` object
+      token: context.botToken,
+      channel: postChannelId, // find channel id or set current channel as post channel
+      post_at: scheduledTime + 5, // delayed more for the ending message
+      blocks: [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "ending prompt example"
+          }
+        },
+        {
+          type: "image",
+          title: {
+            type: "plain_text",
+            text: "ending prompt image example",
+            emoji: true
+          },
+          image_url: "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
+          alt_text: "ending prompt image example"
+        }
+      ],
+      text: `resultPrompt`
+    });
+    
     // clean up user inputs
     userData = {};
   } catch (error) {
@@ -877,19 +929,31 @@ app.command("/cma_invoke", async ({ ack, payload, context, command }) => {
   await promptInvoke(payload.channel_id, payload.user_id, context);
 });
 
+// Listen for a button invocation with action_id `visit_button`
+// You must set up a Request URL under Interactive Components on your app configuration page
+app.action("visit_button", async ({ ack, body, context }) => {
+  // Acknowledge the button request
+  ack();
+
+  console.log("visiting cma website");
+  // ack() and do nothing. this should get rid of the exclamation mark
+});
+
 // Listen for a button invocation with action_id `shuffle_button`
 // You must set up a Request URL under Interactive Components on your app configuration page
 app.action("shuffle_button", async ({ ack, body, context }) => {
   var userId = body.user.id;
-  
+
   // Acknowledge the button request
   ack();
-  
+
   // disable button if user has answered
-  if ('textResponse' in userData[userId]
-      && userData[userId].textResponse.length > 0) {
+  if (
+    "textResponse" in userData[userId] &&
+    userData[userId].textResponse.length > 0
+  ) {
     return;
-  }  
+  }
 
   // only getting 50 results, using processed string
   // await to get results
@@ -1013,10 +1077,12 @@ app.action("confirm_button", async ({ ack, body, context }) => {
 
   // Acknowledge the button request
   ack();
-  
+
   // disable button if user has answered
-  if ('textResponse' in userData[userId]
-      && userData[userId].textResponse.length > 0) {
+  if (
+    "textResponse" in userData[userId] &&
+    userData[userId].textResponse.length > 0
+  ) {
     return;
   }
 
@@ -1160,7 +1226,7 @@ app.message("", async ({ message, payload, context, say }) => {
     // store info and status
     console.log("getting the art index of: " + targetIndex);
     lastArtIndex = targetIndex;
-    
+
     //adding state
     userData[userId].awaitingTextResponse = true;
 
@@ -1371,7 +1437,7 @@ app.event("app_home_opened", async ({ event, context }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `To get a head start. Please set the default channel by going to your desired channel and \`/cma_default_channel\`. \n After that, use \`/cma_set_daily_prompt\` and \`/cma_set_daily_exhibit\` to schedule daily prompt and exhibit time. \n Enjoy!`
+              text: `To get a head start. Please set the default channel by going to your desired channel and \`/cma_default_channel\`. \n After that, use \`/cma_daily_prompt_time\` and \`/cma_daily_exhibit_time\` to schedule daily prompt and exhibit time. \n Enjoy!`
             }
           },
           {
