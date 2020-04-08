@@ -198,7 +198,7 @@ const getPrompts = () => {
     }
   ];
 
-  return prompts[5];
+  return prompts[3];
 };
 
 const getArts = async keyword => {
@@ -492,12 +492,15 @@ async function calculateScheduledDate(
   // }
 
   // go back 24 hours if proposed time is way ahead - due to time zone issues
-  if (proposedDate.getTime() / 1000 - tz_offset  - secondsInADay >  Date.now() / 1000) {
+  if (
+    proposedDate.getTime() / 1000 - tz_offset - secondsInADay >
+    Date.now() / 1000
+  ) {
     var epochProposed = proposedDate.getTime() / 1000.0;
     epochProposed -= secondsInADay; //24hours in seconds
     proposedDate = new Date(epochProposed * 1000);
   }
-    
+
   // format to notify user of the choice
   var formattedLocalProposedDate = formatDate(proposedDate); // this is in user's local time
   await say(`Next schedule happens on ${formattedLocalProposedDate}.`);
@@ -575,6 +578,8 @@ app.command(
 
     clearInterval(scheduledExhibitInterval);
     clearTimeout(scheduledExhibitTimeout);
+    // clean up user inputs
+    userData = {};
 
     //// check if user is admin
     //     var isAdmin = await getIfAdmin(payload.user_id, context);
@@ -627,6 +632,8 @@ app.command(
 
     clearInterval(scheduledPromptInterval);
     clearTimeout(scheduledPromptTimeout);
+    // clean up user inputs
+    userData = {};
 
     //// check if user is admin
     //     var isAdmin = await getIfAdmin(payload.user_id, context);
@@ -747,7 +754,7 @@ async function exhibitScheduledMessage(context, delayedMins) {
           alt_text: prompts.resultPromptTitle
         }
       ],
-      text: `resultPrompt`
+      text: "Exhibition Time!"
     });
 
     for (var key in userData) {
@@ -764,6 +771,7 @@ async function exhibitScheduledMessage(context, delayedMins) {
         const result = await app.client.chat.scheduleMessage({
           // The token you used to initialize your app is stored in the `context` object
           token: context.botToken,
+          text: "Exhibition Time!",
           channel: postChannelId, // find channel id or set current channel as post channel
           post_at: scheduledTime + 2, // delay so the prompt comes first
           blocks: [
@@ -825,13 +833,14 @@ async function exhibitScheduledMessage(context, delayedMins) {
             text: "ending prompt image example",
             emoji: true
           },
-          image_url: "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
+          image_url:
+            "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
           alt_text: "ending prompt image example"
         }
       ],
-      text: `resultPrompt`
+      text: "ending prompt example"
     });
-    
+
     // clean up user inputs
     userData = {};
   } catch (error) {
@@ -910,7 +919,7 @@ async function promptInvoke(channelId, userId, context) {
         }
       ],
       // Text in the notification
-      text: "Message from CMA"
+      text: prompts.prompt
     });
     console.log(result);
   } catch (error) {
@@ -1062,7 +1071,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
           ]
         }
       ],
-      text: "Message from Test App"
+      text: "Adding this art?"
     });
     console.log(result);
   } catch (error) {
@@ -1128,7 +1137,7 @@ app.action("confirm_button", async ({ ack, body, context }) => {
           ]
         }
       ],
-      text: "Message from Test App"
+      text: "Confirmed Selection"
     });
     console.log(result);
   } catch (error) {
@@ -1301,7 +1310,7 @@ app.message("", async ({ message, payload, context, say }) => {
           }
         ],
         // Text in the notification
-        text: "Message from Test App"
+        text: "Shuffled Result"
       });
       console.log(result);
     } catch (error) {
