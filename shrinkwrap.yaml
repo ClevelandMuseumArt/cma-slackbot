@@ -1,6 +1,7 @@
 dependencies:
   '@slack/bolt': 1.6.0
   axios: 0.19.2
+  dotenv: 8.2.0
   node-fetch: 2.6.0
   xmlhttprequest: 1.8.0
 packages:
@@ -231,6 +232,12 @@ packages:
     dev: false
     resolution:
       integrity: sha1-l4hXRCxEdJ5CBmE+N5RiBYJqvYA=
+  /dotenv/8.2.0:
+    dev: false
+    engines:
+      node: '>=8'
+    resolution:
+      integrity: sha512-8sJ78ElpbDJBHNeBzUbUVLsqKdccaa/BXF1uPTw3GrvQTBgrQrtObr2mUrE38vzYd8cEv+m/JBfDLioYcfXoaw==
   /ee-first/1.1.1:
     dev: false
     resolution:
@@ -643,5 +650,6 @@ shrinkwrapVersion: 3
 specifiers:
   '@slack/bolt': ^1.6.0
   axios: ^0.19.2
+  dotenv: ^8.2.0
   node-fetch: ^2.6.0
   xmlhttprequest: ^1.8.0
