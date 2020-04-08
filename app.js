@@ -64,27 +64,15 @@ const writeToAPI = async (slackbotId, data) => {
 const getPrompts = () => {
   var prompts = [
     {
+      title: "See the World from your Sofa",
       prompt:
-        "*A pandemic is a great time for an adult beverage. Reply with the words drinking or drunk to select an artwork for today’s exhibition titled: _The Happy Hour at the End of the World!_*  ",
-      promptArtTitle: "Boy Drinking by Annibale Carracci",
-      promptArtImageUrl:
-        "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
-      resultPrompt:
-        "Well, your coworkers really hit the sauce today, here are their drunken selections for today’s exhibition: _The Happy Hour at the End of the World!_  ",
-      resultPromptTitle: "Boy Drinking by Annibale Carracci",
-      resultPromptImageUrl:
-        "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
-      queryPattern: 'primary_title:("__keyword__")',
-      defaultQuery: 'primary_title:("drunken")'
-    },
-    {
-      prompt:
-        "*See the world, from the safety of your sofa, reply with a location, city, destination, or country you’ve always wanted to visit (or miss) to select a masterpiece for today’s art Exhibition titled: _See the World from your Sofa._*  ",
+        "Are the walls closing in on you? Reply with a location, destination, or country you’ve always wanted to visit to select a masterpiece for today’s exhibition: See the World from your Sofa.",
       promptArtTitle: "Piazza San Marco, Venice by Francesco Guardi",
       promptArtImageUrl:
         "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
       resultPrompt:
-        "Today your coworkers have traveled the world and back, in their pajamas, for today’s Exhibition: _See the World from your Sofa._  ",
+        "Your coworkers have traveled the world and back, in their pajamas, for today’s Exhibition: See the World from your Sofa.",
+      resultPromptConclusion: "The show was a smashing success! Be well. Be safe. And please, STAY AT HOME!!!! See you tomorrow. ",
       resultPromptTitle: "Piazza San Marco, Venice by Francesco Guardi",
       resultPromptImageUrl:
         "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
@@ -92,13 +80,15 @@ const getPrompts = () => {
       defaultQuery: "travel"
     },
     {
+      title: "WWC: Working Without Clothing",
       prompt:
-        "*Working from home allows for unimaginable liberty! Reply nude to select your favorite nude from the Cleveland Museum of Art’s collection to be included in today’s exhibition: _WWC: Working Without Clothing._ *  ",
+        "Working from home is liberating! Reply nude to select your favorite nude from the Cleveland Museum of Art’s collection to be included in today’s exhibition: WWC: Working Without Clothing.",
       promptArtTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
       promptArtImageUrl:
         "https://openaccess-cdn.clevelandart.org/2012.316/2012.316_web.jpg",
       resultPrompt:
-        "Your coworkers have made some revealing selections for today’s exhibition: _WWC: Working Without Clothing_  ",
+        "Your coworkers have made some revealing selections for the exhibition: WWC: Working Without Clothing",
+      resultPromptConclusion: "Brilliant choices. Now put on some pants, please. Don’t forget to join us for tomorrow’s exhibition.",
       resultPromptTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
       resultPromptImageUrl:
         "https://openaccess-cdn.clevelandart.org/2012.316/2012.316_web.jpg",
@@ -106,13 +96,15 @@ const getPrompts = () => {
       defaultQuery: "nude"
     },
     {
+      title: "Personal Protective Equipment",
       prompt:
-        "*Masks, gloves, and rubber suits- PPE has been commonplace throughout the ages. Reply with the word armor to select an image for today’s art exhibition titled: _PPE: Personal Protective Equipment._ *  ",
+        "Masks, gloves, and rubber suits—PPE has been common throughout history. Reply with the word armor to select an image for today’s exhibition: Personal Protective Equipment.",
       promptArtTitle: "Half Armor for the Foot Tournament by Pompeo della Cesa",
       promptArtImageUrl:
         "https://openaccess-cdn.clevelandart.org/1996.299/1996.299_web.jpg",
       resultPrompt:
-        "Your coworkers really protected themselves today. Gather round! Don your armor! Today’s Exhibition: _PPE: Personal Protective Equipment_, is about to begin. ",
+        "Your coworkers really protect themselves! Ready to don your armor? The exhibition: PPE: Personal Protective Equipment, is about to begin.",
+      resultPromptConclusion: "Bravo, now nothing can hurt you. Hope everyone can attend tomorrow’s exhibition.",
       resultPromptTitle:
         "Half Armor for the Foot Tournament by Pompeo della Cesa",
       resultPromptImageUrl:
@@ -121,13 +113,31 @@ const getPrompts = () => {
       defaultQuery: "armor"
     },
     {
+      title: "Happy Hour at the End of the World!",
       prompt:
-        "*Feeling cooped up in lockdown? Perhaps you need some inspiration to get moving? Reply with your favorite physical activity or emoji to select a work of art for today’s exhibition titled: _Dance, Sweat, Shout._ *  ",
+        "A pandemic is a great excuse for an adult beverage. Reply with the words drinking, drunk, or party to select an artwork for today’s exhibition: Happy Hour at the End of the World!",
+      promptArtTitle: "Boy Drinking by Annibale Carracci",
+      promptArtImageUrl:
+        "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
+      resultPrompt:
+        "Your coworkers can hit the sauce. Here are their drunken selections for the exhibition: Happy Hour at the End of the World!",
+      resultPromptConclusion: "It’s time to go home, and since you are already there, avoid a DIY on the way to the kitchen. Be sure to attend the next exhibition.",
+      resultPromptTitle: "Boy Drinking by Annibale Carracci",
+      resultPromptImageUrl:
+        "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
+      queryPattern: 'primary_title:("__keyword__")',
+      defaultQuery: 'primary_title:("drunken")'
+    },    
+    {
+      title: "Dance, Sweat, Shout",
+      prompt:
+        "When was the last time you hit the gym? Need motivation to exercise? Reply with your favorite physical activity or emoji to select an artwork for today’s exhibition: Dance, Sweat, Shout.",
       promptArtTitle: "Zao Gongen 蔵王権現像 Japan, Kamakura period",
       promptArtImageUrl:
         "https://openaccess-cdn.clevelandart.org/1973.105/1973.105_web.jpg",
       resultPrompt:
-        "You and your coworkers really got physical today. Here are your picks for today’s exhibition: _Dance, Sweat, Shout._ ",
+        "Your coworkers got physical today. Here are the picks for today’s exhibition: Dance, Sweat, Shout.",
+      resultPromptConclusion: "Tired? Good. Get some rest and visit tomorrow for the next exhibition.",
       resultPromptTitle: "Zao Gongen 蔵王権現像 Japan, Kamakura period",
       resultPromptImageUrl:
         "https://openaccess-cdn.clevelandart.org/1973.105/1973.105_web.jpg",
@@ -135,13 +145,15 @@ const getPrompts = () => {
       defaultQuery: "dance"
     },
     {
+      title: "Dueling with Loved Ones",
       prompt:
-        "*Feeling embattled while shut in with your loved ones? Reply sword or pistol to select a dueling weapon of your choice to be included in today’s exhibition: _Dueling with Loved Ones._ *  ",
+        "Shut in with your loved ones? Sick of their nonsense? Reply sword or pistol to select a dueling weapon of your choice for today’s exhibition: Dueling with Loved Ones.",
       promptArtTitle: "Stag at Sharkey's by George Bellows",
       promptArtImageUrl:
         "https://piction.clevelandart.org/cma/ump.di?e=0970074B662487FF038039453C63B71F841B290A1217E939481089A17F555D62&s=21&se=692705459&v=8&f=1133.1922_o10.jpg",
       resultPrompt:
-        "Pistols in the kitchen? Sabers in the family room? All I know is that you characters have to be nicer to each other. The exhibition: _Dueling with Loved Ones_ is about to start. Here are your antique weapons: ",
+        "Pistols in the kitchen? Sabers in the family room? People should be nicer to each other. Dueling with Loved Ones is about to start.",
+      resultPromptConclusion: "I hope no one lost an eye. See you at tomorrow’s exhibition!",
       resultPromptTitle: "Stag at Sharkey's by George Bellows",
       resultPromptImageUrl:
         "https://piction.clevelandart.org/cma/ump.di?e=0970074B662487FF038039453C63B71F841B290A1217E939481089A17F555D62&s=21&se=692705459&v=8&f=1133.1922_o10.jpg",
@@ -149,14 +161,16 @@ const getPrompts = () => {
       defaultQuery: "fight"
     },
     {
+      title: "The Magical Menagerie Tour",
       prompt:
-        "*It’s HUMP DAY… Sure life is tough, but at least you’re not a camel. Reply with your spirit animal emoji for today’s art exhibition: _The Magical Menagerie Tour._ *  ",
+        "It’s HUMP DAY… Sure life is tough, but at least you’re not a camel. Reply with your spirit animal emoji for today’s exhibition:  The Magical Menagerie Tour.  ",
       promptArtTitle:
         "Amulet in the Form of a Seated Figure with Bovine Head 牛首玉人 Northeast China, Neolithic period, probably Hongshan culture",
       promptArtImageUrl:
         "https://openaccess-cdn.clevelandart.org/1953.628/1953.628_web.jpg",
       resultPrompt:
-        "Great work! This place has turned into a zoo. Here are you cuddly, slimy, and furry selections for today’s exhibition: _The Magical Menagerie Tour._",
+        "This place is a zoo, great work! Here are the creatures for today’s exhibition: The Magical Menagerie Tour.",
+      resultPromptConclusion: "Please take your furry friends out of here and be sure to attend the next exhibition.",
       resultPromptTitle:
         "Amulet in the Form of a Seated Figure with Bovine Head 牛首玉人 Northeast China, Neolithic period, probably Hongshan culture",
       resultPromptImageUrl:
@@ -165,14 +179,16 @@ const getPrompts = () => {
       defaultQuery: "animal"
     },
     {
+      title: "The Good, the Bad, and the Emotionally Disturbed",
       prompt:
-        "*Does quarantine have you feeling depressed, or anxious, maybe even stir-crazy or pissed-off, or is it the best day of “work” you’ve had in years? It’s ok to have these feelings in tough times. Throughout history, many artists have captured these emotions in their art. Reply to express your emotional state with an emoji to select a work of art for today’s exhibition: _The Good, the Bad, and the Emotionally Disturbed._ *  ",
+        "Does quarantine have you feeling depressed, anxious, or even pissed-off, or is it the best time you’ve had in years? Throughout history, artists have captured their emotions through art. Reply with an emoji to express your emotional state to select a work of art for the exhibition: The Good, the Bad, and the Emotionally Disturbed.",
       promptArtTitle:
         "Female Worshiper - Crete, Minoan, Middle Minoan III - Late Minoan I",
       promptArtImageUrl:
         "https://openaccess-cdn.clevelandart.org/2002.89/2002.89_web.jpg",
       resultPrompt:
-        "I’m happy you’ve got that all out. Today’s exhibition: _The Good, the Bad, and the Emotionally Disturbed_ is about to begin.",
+        "I’m happy you got that out. Today’s exhibition: The Good, the Bad, and the Emotionally Disturbed is about to begin.",
+      resultPromptConclusion: "I’m happy this is a virtual exhibition. Some of you scare me, but not so much that I don’t want you at tomorrow’s exhibition.",
       resultPromptTitle:
         "Female Worshiper - Crete, Minoan, Middle Minoan III - Late Minoan I",
       resultPromptImageUrl:
@@ -181,24 +197,64 @@ const getPrompts = () => {
       defaultQuery: "stress"
     },
     {
+      title: "Color: Humanity’s Universal Language",
       prompt:
-        "*Before written or even spoken language, color was a universal language all humanity shared. To brighten your day in these intense times, complete our newest exhibition: _Color: Humanity’s Universal Language_ by responding with your favorite color. *  ",
+        "Before written or even spoken language, color was the universal language all humanity shared. To brighten your day in these intense times, join our newest exhibition: Color: Humanity’s Universal Language by responding with your favorite color.",
       promptArtTitle:
         "Paulownias and Chrysanthemums 桐菊流水図屏風 by Sakai Hoitsu 酒井抱一",
       promptArtImageUrl:
         "https://openaccess-cdn.clevelandart.org/1964.386/1964.386_web.jpg",
       resultPrompt:
-        "Masterful choices. Today’s exhibition: _Color: Humanity’s Universal Language_ has begun. ",
+        "What wonderful palettes! Today’s exhibition: Color: Humanity’s Universal Language has begun.",
+      resultPromptConclusion: "“And in the end, the study of color is the study of ourselves.”—Josef Albers \n\nHope to see you tomorrow.",
       resultPromptTitle:
         "Paulownias and Chrysanthemums 桐菊流水図屏風 by Sakai Hoitsu 酒井抱一",
       resultPromptImageUrl:
         "https://openaccess-cdn.clevelandart.org/1964.386/1964.386_web.jpg",
       queryPattern: "__keyword__",
       defaultQuery: "color"
-    }
+    },
+    {
+      title: "Art Dreamz",
+      prompt:
+        "Dreaming more than usual these days? Dreams can be entertaining, disturbing, or bizarre, but they also help us process psychological baggage. Reply with the word dream to select a masterpiece for today’s exhibition: Art Dreamz.",
+      promptArtTitle:
+        "The Dream by Salvador Dalí",
+      promptArtImageUrl:
+        "https://piction.clevelandart.org/cma/ump.di?e=DFAD92E0B0B32D3C1044892274B9BCA89B596B718752F2013F3277E4A3587A29&s=21&se=248531947&v=6&f=2001.34_o10.jpg",
+      resultPrompt:
+        "I hope that was cathartic. The team certainly has interesting dreams. Here they are:",
+      resultPromptConclusion: "“Give me two hours a day of activity, and I'll take the other twenty-two in dreams.”—Salvador Dali.  \n\nHope everyone can join us for tomorrow’s exhibition.",
+      resultPromptTitle:
+        "The Dream by Salvador Dalí",
+      resultPromptImageUrl:
+        "https://piction.clevelandart.org/cma/ump.di?e=DFAD92E0B0B32D3C1044892274B9BCA89B596B718752F2013F3277E4A3587A29&s=21&se=248531947&v=6&f=2001.34_o10.jpg",
+      queryPattern: "__keyword__",
+      defaultQuery: "dream"
+    }, 
+    {
+      title: "Human Connection",
+      prompt:
+        "Craving a hug, a kiss, or even a high five? As humans, many of us crave the connection that physical touch can make us feel. Reply with the word “connect” to select an artwork for today’s exhibition: Human Connection. ",
+      promptArtTitle:
+        "Cupid and Psyche by Jacques-Louis David",
+      promptArtImageUrl:
+        "https://openaccess-cdn.clevelandart.org/1962.37/1962.37_web.jpg",
+      resultPrompt:
+        "We all got a little touchy-feely today, and now the exhibition is about to begin.",
+      resultPromptConclusion: "How touching! Be sure to attend tomorrow’s exhibition.",
+      resultPromptTitle:
+        "Cupid and Psyche by Jacques-Louis David",
+      resultPromptImageUrl:
+        "https://openaccess-cdn.clevelandart.org/1962.37/1962.37_web.jpg",
+      queryPattern: "__keyword__",
+      defaultQuery: "touch"
+    }    
   ];
-
-  return prompts[3];
+  
+  var promptIndex = prompts.length - 1;
+  
+  return prompts[promptIndex];
 };
 
 const getArts = async keyword => {
@@ -823,22 +879,22 @@ async function exhibitScheduledMessage(context, delayedMins) {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: "ending prompt example"
+            text: prompts.resultPromptConclusion
           }
         },
-        {
-          type: "image",
-          title: {
-            type: "plain_text",
-            text: "ending prompt image example",
-            emoji: true
-          },
-          image_url:
-            "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
-          alt_text: "ending prompt image example"
-        }
+        // {
+        //   type: "image",
+        //   title: {
+        //     type: "plain_text",
+        //     text: "ending prompt image example",
+        //     emoji: true
+        //   },
+        //   image_url:
+        //     "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
+        //   alt_text: "ending prompt image example"
+        // }
       ],
-      text: "ending prompt example"
+      text: prompts.resultPromptConclusion
     });
 
     // clean up user inputs
@@ -926,6 +982,15 @@ async function promptInvoke(channelId, userId, context) {
     console.error(error);
   }
 }
+
+app.command("/cma_test", async ({ ack, payload, context, command }) => {
+  // Acknowledge the command request
+  ack();
+
+  console.log(payload.user_id);
+  console.log("just testing....");
+
+});
 
 // invoke cma prompt for demo
 // Listen for invoking cma prompt
