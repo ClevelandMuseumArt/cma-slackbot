@@ -45,13 +45,13 @@ function getUserData(
   // Does user's record exist in userData yet?
   if (!(userId in userData)) {
     userData[userId] = {
-      awaitingTextResponse: false,
-      awaitingArtworkSelection: true,
-      // lastImgUrl: "",
-      lastImgCreator: "",
-      lastImgTitle: "",
-      // artworkUrl: "",
-      textResponse: ""
+      // awaitingTextResponse: false,
+      // awaitingArtworkSelection: true,
+      // // lastImgUrl: "",
+      // lastImgCreator: "",
+      // lastImgTitle: "",
+      // // artworkUrl: "",
+      // textResponse: ""
     };
     console.log("adding new user");
   }
@@ -59,9 +59,9 @@ function getUserData(
   userData[userId].chatChannelId =
     chatChannelId || userData[userId].chatChannelId;
   userData[userId].awaitingTextResponse =
-    awaitingTextResponse || userData[userId].awaitingTextResponse;
+    (awaitingTextResponse !== undefined) ? awaitingTextResponse: userData[userId].awaitingTextResponse;
   userData[userId].awaitingArtworkSelection =
-    awaitingArtworkSelection || userData[userId].awaitingArtworkSelection;
+    (awaitingArtworkSelection !== undefined) ? awaitingArtworkSelection : userData[userId].awaitingArtworkSelection;
   userData[userId].keyword = keyword || userData[userId].keyword;
   userData[userId].lastImgUrl = lastImgUrl || userData[userId].lastImgUrl;
   userData[userId].lastImgCreator =
@@ -70,6 +70,7 @@ function getUserData(
   userData[userId].artworkUrl = artworkUrl || userData[userId].artworkUrl;
   userData[userId].textResponse = textResponse || userData[userId].textResponse;
   userData[userId].lastUser = lastUser || userData[userId].lastUser;
+    
   return userData[userId];
 }
 
@@ -946,12 +947,12 @@ async function exhibitScheduledMessage(context, delayedMins) {
       ],
       text: prompts.resultPromptConclusion
     });
-
-    // clean up user inputs
-    userData = {};
   } catch (error) {
     console.error(error);
   }
+  
+    // clear input no matter what
+    userData = {};  
 }
 
 // schedule the exhibit, currently just adding delay, can expand from here
@@ -988,25 +989,25 @@ async function promptInvoke(channelId, userId, context) {
   console.dir(userData);
   // Does user's record exist in userData yet?
   if (!(userId in userData)) {
-    // userData[userId] = {
-    //   chatChannelId: channelId,
-    //   awaitingTextResponse: false,
-    //   awaitingArtworkSelection: true
-    // };
+    userData[userId] = {
+      chatChannelId: channelId,
+      awaitingTextResponse: false,
+      awaitingArtworkSelection: true
+    };
 
-    getUserData(
-      userId,
-      channelId,
-      false,
-      true,
-      void 0,
-      void 0,
-      void 0,
-      void 0,
-      void 0,
-      void 0,
-      void 0
-    );
+    // getUserData(
+    //   userId,
+    //   channelId,
+    //   false,
+    //   true,
+    //   void 0,
+    //   void 0,
+    //   void 0,
+    //   void 0,
+    //   void 0,
+    //   void 0,
+    //   void 0
+    // );
   }
   
   // variables (to be updated dynamically)
@@ -1096,7 +1097,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
 
   // disable button if user has answered
   if (
-    "textResponse" in getUserData(userId) && 
+    getUserData(userId).textResponse && 
     getUserData(userId).textResponse.length > 0
   ) {
     return;
@@ -1244,7 +1245,7 @@ app.action("confirm_button", async ({ ack, body, context }) => {
 
   // disable button if user has answered
   if (
-    "textResponse" in getUserData(userId) &&
+    getUserData(userId).textResponse &&
     getUserData(userId).textResponse.length > 0
   ) {
     return;
@@ -1315,11 +1316,13 @@ app.message("", async ({ message, payload, context, say }) => {
   // check if user is admin
   var isAdmin = await getIfAdmin(userId, context);
 
-  console.dir(payload);
-  if (!isAdmin && payload.channel == postChannelId) {
-    await say("Hi! Only admin can do this");
-    return;
-  }
+  // TODO: don't know what this is for -EH
+  // console.dir(payload);
+  // if (!isAdmin && payload.channel == postChannelId) {
+  //   await say("Hi! Only admin can do this");
+  //   return;
+  // }
+  
   // cancel
   console.log(`user response: ${message.text}, user id: ${message.user}`);
 
