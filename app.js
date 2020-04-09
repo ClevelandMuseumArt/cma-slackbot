@@ -133,14 +133,14 @@ const getPrompts = () => {
         "Working from home is liberating! Reply nude to select your favorite nude from the Cleveland Museum of Art’s collection to be included in today’s exhibition: WWC: Working Without Clothing.",
       promptArtTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
       promptArtImageUrl:
-        "https://openaccess-cdn.clevelandart.org/2012.316/2012.316_web.jpg",
+        "https://piction.clevelandart.org/cma/ump.di?e=242775E0B50F25E80AABAE67FD160DD9369E552755341EF2E84AE13CE4E33C7C&s=21&se=1452375476&v=&f=2012.316_o10.jpg",
       resultPrompt:
         "Your coworkers have made some revealing selections for the exhibition: WWC: Working Without Clothing",
       resultPromptConclusion:
         "Brilliant choices. Now put on some pants, please. Don’t forget to join us for tomorrow’s exhibition.",
       resultPromptTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
       resultPromptImageUrl:
-        "https://openaccess-cdn.clevelandart.org/2012.316/2012.316_web.jpg",
+        "https://piction.clevelandart.org/cma/ump.di?e=242775E0B50F25E80AABAE67FD160DD9369E552755341EF2E84AE13CE4E33C7C&s=21&se=1452375476&v=&f=2012.316_o10.jpg",
       queryPattern: "__keyword__ AND nude",
       defaultQuery: "nude"
     },
@@ -306,7 +306,7 @@ const getPrompts = () => {
     }
   ];
 
-  var promptIndex = 2;
+  var promptIndex = 4;
   
   return prompts[promptIndex];
 };
@@ -316,6 +316,8 @@ const getArts = async keyword => {
   var parsedKeyword = keyword.replace(/:/g, "");
   var prompts = getPrompts();
   var query = prompts.queryPattern.replace(/__keyword__/g, parsedKeyword);
+  
+  console.log("query---> "+query);
 
   var artworks = [];
 
@@ -325,7 +327,9 @@ const getArts = async keyword => {
     var results = await axios.get(url);
 
     if (results.data.info.total == 0) {
-      url = `${openaccessUrl}?q=${keyword}&has_image=1&limit=${limit}`;
+      query = parsedKeyword;
+      
+      url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
       console.log("NO RESULTS, using keyword only, getting from: " + url);
       results = await axios.get(url);
     }
@@ -1014,6 +1018,7 @@ async function promptInvoke(channelId, userId, context) {
   var prompts = getPrompts();
 
   console.log(`invoking prompt on ${channelId}`);
+
   // create a block
   try {
     const result = await app.client.chat.postMessage({
