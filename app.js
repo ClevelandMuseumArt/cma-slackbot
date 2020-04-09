@@ -29,6 +29,49 @@ var postChannelId = "";
 //var chatChannelId = ""; // QUESTION: put in user data?
 
 var userData = {};
+function getUserData(
+  userId,
+  chatChannelId,
+  awaitingTextResponse,
+  awaitingArtworkSelection,
+  keyword,
+  lastImgUrl,
+  lastImgCreator,
+  lastImgTitle,
+  artworkUrl,
+  textResponse,
+  lastUser
+) {
+  // Does user's record exist in userData yet?
+  if (!(userId in userData)) {
+    userData[userId] = {
+      awaitingTextResponse: false,
+      awaitingArtworkSelection: true,
+      // lastImgUrl: "",
+      lastImgCreator: "",
+      lastImgTitle: "",
+      // artworkUrl: "",
+      textResponse: ""
+    };
+    console.log("adding new user");
+  }
+  // replace/update user data, check if undefined.
+  userData[userId].chatChannelId =
+    chatChannelId || userData[userId].chatChannelId;
+  userData[userId].awaitingTextResponse =
+    awaitingTextResponse || userData[userId].awaitingTextResponse;
+  userData[userId].awaitingArtworkSelection =
+    awaitingArtworkSelection || userData[userId].awaitingArtworkSelection;
+  userData[userId].keyword = keyword || userData[userId].keyword;
+  userData[userId].lastImgUrl = lastImgUrl || userData[userId].lastImgUrl;
+  userData[userId].lastImgCreator =
+    lastImgCreator || userData[userId].lastImgCreator;
+  userData[userId].lastImgTitle = lastImgTitle || userData[userId].lastImgTitle;
+  userData[userId].artworkUrl = artworkUrl || userData[userId].artworkUrl;
+  userData[userId].textResponse = textResponse || userData[userId].textResponse;
+  userData[userId].lastUser = lastUser || userData[userId].lastUser;
+  return userData[userId];
+}
 
 // get json result
 // use xmlhttp only to get result at the very beginning (good for the random function). use axios for async
@@ -75,7 +118,8 @@ const getPrompts = () => {
         "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
       resultPrompt:
         "Your coworkers have traveled the world and back, in their pajamas, for today’s Exhibition: See the World from your Sofa.",
-      resultPromptConclusion: "The show was a smashing success! Be well. Be safe. And please, STAY AT HOME!!!! See you tomorrow. ",
+      resultPromptConclusion:
+        "The show was a smashing success! Be well. Be safe. And please, STAY AT HOME!!!! See you tomorrow. ",
       resultPromptTitle: "Piazza San Marco, Venice by Francesco Guardi",
       resultPromptImageUrl:
         "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
@@ -91,7 +135,8 @@ const getPrompts = () => {
         "https://openaccess-cdn.clevelandart.org/2012.316/2012.316_web.jpg",
       resultPrompt:
         "Your coworkers have made some revealing selections for the exhibition: WWC: Working Without Clothing",
-      resultPromptConclusion: "Brilliant choices. Now put on some pants, please. Don’t forget to join us for tomorrow’s exhibition.",
+      resultPromptConclusion:
+        "Brilliant choices. Now put on some pants, please. Don’t forget to join us for tomorrow’s exhibition.",
       resultPromptTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
       resultPromptImageUrl:
         "https://openaccess-cdn.clevelandart.org/2012.316/2012.316_web.jpg",
@@ -107,7 +152,8 @@ const getPrompts = () => {
         "https://openaccess-cdn.clevelandart.org/1996.299/1996.299_web.jpg",
       resultPrompt:
         "Your coworkers really protect themselves! Ready to don your armor? The exhibition: PPE: Personal Protective Equipment, is about to begin.",
-      resultPromptConclusion: "Bravo, now nothing can hurt you. Hope everyone can attend tomorrow’s exhibition.",
+      resultPromptConclusion:
+        "Bravo, now nothing can hurt you. Hope everyone can attend tomorrow’s exhibition.",
       resultPromptTitle:
         "Half Armor for the Foot Tournament by Pompeo della Cesa",
       resultPromptImageUrl:
@@ -124,13 +170,14 @@ const getPrompts = () => {
         "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
       resultPrompt:
         "Your coworkers can hit the sauce. Here are their drunken selections for the exhibition: Happy Hour at the End of the World!",
-      resultPromptConclusion: "It’s time to go home, and since you are already there, avoid a DIY on the way to the kitchen. Be sure to attend the next exhibition.",
+      resultPromptConclusion:
+        "It’s time to go home, and since you are already there, avoid a DIY on the way to the kitchen. Be sure to attend the next exhibition.",
       resultPromptTitle: "Boy Drinking by Annibale Carracci",
       resultPromptImageUrl:
         "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
       queryPattern: 'primary_title:("__keyword__")',
       defaultQuery: 'primary_title:("drunken")'
-    },    
+    },
     {
       title: "Dance, Sweat, Shout",
       prompt:
@@ -140,7 +187,8 @@ const getPrompts = () => {
         "https://openaccess-cdn.clevelandart.org/1973.105/1973.105_web.jpg",
       resultPrompt:
         "Your coworkers got physical today. Here are the picks for today’s exhibition: Dance, Sweat, Shout.",
-      resultPromptConclusion: "Tired? Good. Get some rest and visit tomorrow for the next exhibition.",
+      resultPromptConclusion:
+        "Tired? Good. Get some rest and visit tomorrow for the next exhibition.",
       resultPromptTitle: "Zao Gongen 蔵王権現像 Japan, Kamakura period",
       resultPromptImageUrl:
         "https://openaccess-cdn.clevelandart.org/1973.105/1973.105_web.jpg",
@@ -156,7 +204,8 @@ const getPrompts = () => {
         "https://piction.clevelandart.org/cma/ump.di?e=0970074B662487FF038039453C63B71F841B290A1217E939481089A17F555D62&s=21&se=692705459&v=8&f=1133.1922_o10.jpg",
       resultPrompt:
         "Pistols in the kitchen? Sabers in the family room? People should be nicer to each other. Dueling with Loved Ones is about to start.",
-      resultPromptConclusion: "I hope no one lost an eye. See you at tomorrow’s exhibition!",
+      resultPromptConclusion:
+        "I hope no one lost an eye. See you at tomorrow’s exhibition!",
       resultPromptTitle: "Stag at Sharkey's by George Bellows",
       resultPromptImageUrl:
         "https://piction.clevelandart.org/cma/ump.di?e=0970074B662487FF038039453C63B71F841B290A1217E939481089A17F555D62&s=21&se=692705459&v=8&f=1133.1922_o10.jpg",
@@ -173,7 +222,8 @@ const getPrompts = () => {
         "https://openaccess-cdn.clevelandart.org/1953.628/1953.628_web.jpg",
       resultPrompt:
         "This place is a zoo, great work! Here are the creatures for today’s exhibition: The Magical Menagerie Tour.",
-      resultPromptConclusion: "Please take your furry friends out of here and be sure to attend the next exhibition.",
+      resultPromptConclusion:
+        "Please take your furry friends out of here and be sure to attend the next exhibition.",
       resultPromptTitle:
         "Amulet in the Form of a Seated Figure with Bovine Head 牛首玉人 Northeast China, Neolithic period, probably Hongshan culture",
       resultPromptImageUrl:
@@ -191,7 +241,8 @@ const getPrompts = () => {
         "https://openaccess-cdn.clevelandart.org/2002.89/2002.89_web.jpg",
       resultPrompt:
         "I’m happy you got that out. Today’s exhibition: The Good, the Bad, and the Emotionally Disturbed is about to begin.",
-      resultPromptConclusion: "I’m happy this is a virtual exhibition. Some of you scare me, but not so much that I don’t want you at tomorrow’s exhibition.",
+      resultPromptConclusion:
+        "I’m happy this is a virtual exhibition. Some of you scare me, but not so much that I don’t want you at tomorrow’s exhibition.",
       resultPromptTitle:
         "Female Worshiper - Crete, Minoan, Middle Minoan III - Late Minoan I",
       resultPromptImageUrl:
@@ -209,7 +260,8 @@ const getPrompts = () => {
         "https://openaccess-cdn.clevelandart.org/1964.386/1964.386_web.jpg",
       resultPrompt:
         "What wonderful palettes! Today’s exhibition: Color: Humanity’s Universal Language has begun.",
-      resultPromptConclusion: "“And in the end, the study of color is the study of ourselves.”—Josef Albers \n\nHope to see you tomorrow.",
+      resultPromptConclusion:
+        "“And in the end, the study of color is the study of ourselves.”—Josef Albers \n\nHope to see you tomorrow.",
       resultPromptTitle:
         "Paulownias and Chrysanthemums 桐菊流水図屏風 by Sakai Hoitsu 酒井抱一",
       resultPromptImageUrl:
@@ -221,42 +273,40 @@ const getPrompts = () => {
       title: "Art Dreamz",
       prompt:
         "Dreaming more than usual these days? Dreams can be entertaining, disturbing, or bizarre, but they also help us process psychological baggage. Reply with the word dream to select a masterpiece for today’s exhibition: Art Dreamz.",
-      promptArtTitle:
-        "The Dream by Salvador Dalí",
+      promptArtTitle: "The Dream by Salvador Dalí",
       promptArtImageUrl:
         "https://piction.clevelandart.org/cma/ump.di?e=DFAD92E0B0B32D3C1044892274B9BCA89B596B718752F2013F3277E4A3587A29&s=21&se=248531947&v=6&f=2001.34_o10.jpg",
       resultPrompt:
         "I hope that was cathartic. The team certainly has interesting dreams. Here they are:",
-      resultPromptConclusion: "“Give me two hours a day of activity, and I'll take the other twenty-two in dreams.”—Salvador Dali.  \n\nHope everyone can join us for tomorrow’s exhibition.",
-      resultPromptTitle:
-        "The Dream by Salvador Dalí",
+      resultPromptConclusion:
+        "“Give me two hours a day of activity, and I'll take the other twenty-two in dreams.”—Salvador Dali.  \n\nHope everyone can join us for tomorrow’s exhibition.",
+      resultPromptTitle: "The Dream by Salvador Dalí",
       resultPromptImageUrl:
         "https://piction.clevelandart.org/cma/ump.di?e=DFAD92E0B0B32D3C1044892274B9BCA89B596B718752F2013F3277E4A3587A29&s=21&se=248531947&v=6&f=2001.34_o10.jpg",
       queryPattern: "__keyword__",
       defaultQuery: "dream"
-    }, 
+    },
     {
       title: "Human Connection",
       prompt:
         "Craving a hug, a kiss, or even a high five? As humans, many of us crave the connection that physical touch can make us feel. Reply with the word “connect” to select an artwork for today’s exhibition: Human Connection. ",
-      promptArtTitle:
-        "Cupid and Psyche by Jacques-Louis David",
+      promptArtTitle: "Cupid and Psyche by Jacques-Louis David",
       promptArtImageUrl:
         "https://openaccess-cdn.clevelandart.org/1962.37/1962.37_web.jpg",
       resultPrompt:
         "We all got a little touchy-feely today, and now the exhibition is about to begin.",
-      resultPromptConclusion: "How touching! Be sure to attend tomorrow’s exhibition.",
-      resultPromptTitle:
-        "Cupid and Psyche by Jacques-Louis David",
+      resultPromptConclusion:
+        "How touching! Be sure to attend tomorrow’s exhibition.",
+      resultPromptTitle: "Cupid and Psyche by Jacques-Louis David",
       resultPromptImageUrl:
         "https://openaccess-cdn.clevelandart.org/1962.37/1962.37_web.jpg",
       queryPattern: "__keyword__",
       defaultQuery: "touch"
-    }    
+    }
   ];
-  
-  var promptIndex = prompts.length - 1;
-  
+
+  var promptIndex = 2;
+
   return prompts[promptIndex];
 };
 
@@ -353,9 +403,10 @@ function getNextRndInteger(src, min, max) {
 
 // Just an state test
 app.message("seestate", async ({ message, say }) => {
-  console.log("#############");
-  console.log(userData);
-  console.log("#############");
+  console.info("#########################");
+  console.into("channelId: " + postChannelId);
+  console.info(userData);
+  console.info("#########################");
 });
 
 //-----------------end-------------------------------------------
@@ -784,7 +835,7 @@ async function exhibitScheduledMessage(context, delayedMins) {
     user_data: userData
   };
 
-  writeToAPI(slackbotId, data);
+  await writeToAPI(slackbotId, data);
 
   try {
     // the delayed opening statement
@@ -817,8 +868,8 @@ async function exhibitScheduledMessage(context, delayedMins) {
     });
 
     for (var key in userData) {
-      var thisUser = userData[key];
-
+      var thisUser = getUserData(key);
+      console.dir(thisUser);
       if ("lastImgUrl" in thisUser) {
         var title = thisUser.lastImgTitle;
         var img = thisUser.lastImgUrl;
@@ -884,7 +935,7 @@ async function exhibitScheduledMessage(context, delayedMins) {
             type: "mrkdwn",
             text: prompts.resultPromptConclusion
           }
-        },
+        }
         // {
         //   type: "image",
         //   title: {
@@ -932,6 +983,7 @@ app.command(
   }
 );
 
+
 // this is where the prompt message is composed
 async function promptInvoke(channelId, userId, context) {
   // save channel id
@@ -940,13 +992,27 @@ async function promptInvoke(channelId, userId, context) {
   console.dir(userData);
   // Does user's record exist in userData yet?
   if (!(userId in userData)) {
-    userData[userId] = {
-      chatChannelId: channelId,
-      awaitingTextResponse: false,
-      awaitingArtworkSelection: true
-    };
-  }
+    // userData[userId] = {
+    //   chatChannelId: channelId,
+    //   awaitingTextResponse: false,
+    //   awaitingArtworkSelection: true
+    // };
 
+    getUserData(
+      userId,
+      channelId,
+      false,
+      true,
+      void 0,
+      void 0,
+      void 0,
+      void 0,
+      void 0,
+      void 0,
+      void 0
+    );
+  }
+  
   // variables (to be updated dynamically)
   var prompts = getPrompts();
 
@@ -986,13 +1052,13 @@ async function promptInvoke(channelId, userId, context) {
   }
 }
 
+
 app.command("/cma_test", async ({ ack, payload, context, command }) => {
   // Acknowledge the command request
   ack();
 
   console.log(payload.user_id);
   console.log("just testing....");
-
 });
 
 // invoke cma prompt for demo
@@ -1024,17 +1090,25 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   // Acknowledge the button request
   ack();
 
+  // // disable button if user has answered
+  // if (
+  //   "textResponse" in userData[userId] &&
+  //   userData[userId].textResponse.length > 0
+  // ) {
+  //   return;
+  // }
+
   // disable button if user has answered
   if (
-    "textResponse" in userData[userId] &&
-    userData[userId].textResponse.length > 0
+    "textResponse" in getUserData(userId) && 
+    getUserData(userId).textResponse.length > 0
   ) {
     return;
   }
 
   // only getting 50 results, using processed string
   // await to get results
-  const artObjects = await getArts(userData[userId].keyword);
+  const artObjects = await getArts(getUserData(userId).keyword);
   //console.dir(artObjects);
 
   console.log(artObjects.length);
@@ -1067,13 +1141,30 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   console.log("getting the next art index of: " + targetIndex);
   lastArtIndex = targetIndex;
 
-  userData[userId].lastImgUrl = featured.images.web.url;
-  userData[userId].lastImgCreator = formatCreators(featured.creators);
-  userData[userId].lastImgTitle = featured.title;
-  userData[userId].artworkUrl = featured.url;
+  //          userId,chatChannelId,awaitingTextResponse,awaitingArtworkSelection, keyword, lastImgUrl,lastImgCreator,lastImgTitle,artworkUrl,textResponse
+  var creators = formatCreators(featured.creators);
 
-  //adding state
-  userData[userId].awaitingTextResponse = true;
+  console.dir(creators);
+  getUserData(
+    userId, // uesr id
+    void 0, // chat channel id
+    true, // awaiting text response
+    void 0, // waiting artwork selection
+    void 0, // keyword
+    featured.images.web.url, // last img url
+    creators, // last img creator
+    featured.title, // last imge title
+    featured.url, // artwork url
+    void 0 // text response
+  );
+
+  //       userData[userId].lastImgUrl = featured.images.web.url;
+  //       userData[userId].lastImgCreator = formatCreators(featured.creators);
+  //       userData[userId].lastImgTitle = featured.title;
+  //       userData[userId].artworkUrl = featured.url;
+
+  //       //adding state
+  //       userData[userId].awaitingTextResponse = true;
 
   try {
     // Update the message
@@ -1100,17 +1191,17 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
           title: {
             type: "plain_text",
             text:
-              userData[userId].lastImgTitle +
+              getUserData(userId).lastImgTitle +
               "\n" +
               "by " +
-              userData[userId].lastImgCreator,
+              getUserData(userId).lastImgCreator,
             emoji: true
           },
-          image_url: userData[userId].lastImgUrl,
+          image_url: getUserData(userId).lastImgUrl,
           alt_text:
-            userData[userId].lastImgTitle +
+            getUserData(userId).lastImgTitle +
             " by " +
-            userData[userId].lastImgCreator
+            getUserData(userId).lastImgCreator
         },
         {
           type: "actions",
@@ -1157,8 +1248,8 @@ app.action("confirm_button", async ({ ack, body, context }) => {
 
   // disable button if user has answered
   if (
-    "textResponse" in userData[userId] &&
-    userData[userId].textResponse.length > 0
+    "textResponse" in getUserData(userId) &&
+    getUserData(userId).textResponse.length > 0
   ) {
     return;
   }
@@ -1166,7 +1257,7 @@ app.action("confirm_button", async ({ ack, body, context }) => {
   try {
     // reaffirm status
     //adding state
-    userData[body.user.id].awaitingTextResponse = true;
+    getUserData(body.user.id).awaitingTextResponse = true;
 
     // Update the message
     const result = await app.client.chat.update({
@@ -1183,7 +1274,7 @@ app.action("confirm_button", async ({ ack, body, context }) => {
             text: "image1",
             emoji: true
           },
-          image_url: userData[userId].lastImgUrl,
+          image_url: getUserData(userId).lastImgUrl,
           alt_text: "image1"
         },
         {
@@ -1237,12 +1328,14 @@ app.message("", async ({ message, payload, context, say }) => {
   console.log(`user response: ${message.text}, user id: ${message.user}`);
 
   // Does user's record exist in userData yet?
-  if (!(userId in userData)) {
-    userData[userId] = {
-      awaitingTextResponse: false,
-      awaitingArtworkSelection: true
-    };
-  }
+  // if (!(userId in userData)) {
+  //   userData[userId] = {
+  //     awaitingTextResponse: false,
+  //     awaitingArtworkSelection: true
+  //   };
+  // }
+  // this will create new key if needed
+  getUserData(userId);
 
   if (message.text == "random") {
     return;
@@ -1261,17 +1354,30 @@ app.message("", async ({ message, payload, context, say }) => {
   }
 
   // wait for artwork comment
-  if (userData[userId].awaitingTextResponse) {
+  if (getUserData(userId).awaitingTextResponse) {
     console.log("record user input from: " + message.user);
     await say(
       `Great!, <@${message.user}>, your selection and comment is recorded. Reply *cancel* to cancel.`
     );
 
     //adding state
-    userData[userId].awaitingTextResponse = false;
-    userData[userId].awaitingArtworkSelection = false;
+    getUserData(
+      userId, // uesr id
+      void 0, // chat channel id
+      false, // awaiting text response
+      false, // waiting artwork selection
+      void 0, // keyword
+      void 0, // last img url
+      void 0, // last img creator
+      void 0, // last imge title
+      void 0, // artwork url
+      message.text, // text response
+      void 0 // last user
+    );
 
-    userData[userId].textResponse = message.text;
+    // userData[userId].awaitingTextResponse = false;
+    // userData[userId].awaitingArtworkSelection = false;
+    // userData[userId].textResponse = message.text;
 
     // all responses were collected, scheduling message
     const secondsSinceEpoch = Date.now() / 1000;
@@ -1283,7 +1389,7 @@ app.message("", async ({ message, payload, context, say }) => {
   }
 
   // for artwork selection
-  if (userData[userId].awaitingArtworkSelection) {
+  if (getUserData(userId).awaitingArtworkSelection) {
     await say(
       "Hi! :wave: This is your input :arrow_right: :     " +
         `${message.text}` +
@@ -1293,7 +1399,20 @@ app.message("", async ({ message, payload, context, say }) => {
     // await to get results
     const artObjects = await getArts(message.text);
 
-    userData[userId].keyword = message.text;
+    //userData[userId].keyword = message.text;
+    getUserData(
+      userId, // uesr id
+      void 0, // chat channel id
+      void 0, // awaiting text response
+      void 0, // waiting artwork selection
+      message.text, // keyword
+      void 0, // last img url
+      void 0, // last img creator
+      void 0, // last imge title
+      void 0, // artwork url
+      void 0, // text response
+      void 0 // last user
+    );
 
     console.log(artObjects.length);
     var targetIndex = getRndInteger(0, artObjects.length - 1);
@@ -1305,21 +1424,35 @@ app.message("", async ({ message, payload, context, say }) => {
     lastArtIndex = targetIndex;
 
     //adding state
-    userData[userId].awaitingTextResponse = true;
+    // userData[userId].awaitingTextResponse = true;
+    // userData[userId].lastImgUrl = featured.images.web.url;
+    // userData[userId].lastImgTitle = featured.title;
+    // userData[userId].lastImgCreator = formatCreators(featured.creators);
+    // userData[userId].artworkUrl = featured.url;
+    // userData[userId].lastUser = message.user;
+    // userData[userId].textResponse = "";
 
-    userData[userId].lastImgUrl = featured.images.web.url;
-    userData[userId].lastImgTitle = featured.title;
-    userData[userId].lastImgCreator = formatCreators(featured.creators);
-    userData[userId].artworkUrl = featured.url;
-    userData[userId].lastUser = message.user;
-    userData[userId].textResponse = "";
+    var creators = formatCreators(featured.creators);
+    getUserData(
+      userId, // uesr id
+      void 0, // chat channel id
+      true, // awaiting text response
+      void 0, // waiting artwork selection
+      void 0, // keyword
+      featured.images.web.url, // last img url
+      creators, // last img creator
+      featured.title, // last imge title
+      featured.url, // artwork url
+      "", // text response
+      message.user // lastUser
+    );
 
     // create a block
     try {
       const result = await app.client.chat.postMessage({
         token: context.botToken,
         // Channel to send message to
-        channel: userData[userId].chatChannelId,
+        channel: getUserData(userId).chatChannelId,
         // Main art selection interaction
         blocks: [
           {
@@ -1338,17 +1471,17 @@ app.message("", async ({ message, payload, context, say }) => {
             title: {
               type: "plain_text",
               text:
-                userData[userId].lastImgTitle +
+                getUserData(userId).lastImgTitle +
                 "\n" +
                 "by " +
-                userData[userId].lastImgCreator,
+                getUserData(userId).lastImgCreator,
               emoji: true
             },
-            image_url: userData[userId].lastImgUrl,
+            image_url: getUserData(userId).lastImgUrl,
             alt_text:
-              userData[userId].lastImgTitle +
+              getUserData(userId).lastImgTitle +
               " by " +
-              userData[userId].lastImgCreator
+              getUserData(userId).lastImgCreator
           },
           {
             type: "actions",
