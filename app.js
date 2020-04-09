@@ -306,7 +306,7 @@ const getPrompts = () => {
   ];
 
   var promptIndex = 2;
-
+  
   return prompts[promptIndex];
 };
 
@@ -404,7 +404,7 @@ function getNextRndInteger(src, min, max) {
 // Just an state test
 app.message("seestate", async ({ message, say }) => {
   console.info("#########################");
-  console.into("channelId: " + postChannelId);
+  console.info("channelId: " + postChannelId);
   console.info(userData);
   console.info("#########################");
 });
@@ -688,8 +688,6 @@ app.command(
 
     clearInterval(scheduledExhibitInterval);
     clearTimeout(scheduledExhibitTimeout);
-    // clean up user inputs
-    userData = {};
 
     //// check if user is admin
     //     var isAdmin = await getIfAdmin(payload.user_id, context);
@@ -825,9 +823,6 @@ async function exhibitScheduledMessage(context, delayedMins) {
 
   // prompt variables
   var prompts = getPrompts();
-  // var resultPrompt = "Well, your coworkers really hit the sauce today, here are their drunken selections for today’s exhibition: *The Happy Hour at the End of the World!*  ";
-  // var resultPromptImageUrl = "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg";
-  // var resultPromptTitle = "Boy Drinking by Annibale Carracci";
 
   // talking to api
   var slackbotId = "id-" + postChannelId + "-" + getRndInteger(10000, 99999);
@@ -869,14 +864,15 @@ async function exhibitScheduledMessage(context, delayedMins) {
 
     for (var key in userData) {
       var thisUser = getUserData(key);
+      
       console.dir(thisUser);
-      if ("lastImgUrl" in thisUser) {
-        var title = thisUser.lastImgTitle;
+      
+      if (thisUser.lastImgUrl && thisUser.lastImgTitle) {
         var img = thisUser.lastImgUrl;
-        var creator = thisUser.lastImgCreator;
         var artworkUrl = thisUser.artworkUrl;
         var textResponse = thisUser.textResponse;
         var userId = key;
+        var artworkLabel = thisUser.lastImgTitle + (thisUser.lastImgCreator ? " by " + thisUser.lastImgCreator : "");
 
         const result = await app.client.chat.scheduleMessage({
           // The token you used to initialize your app is stored in the `context` object
@@ -892,11 +888,11 @@ async function exhibitScheduledMessage(context, delayedMins) {
               type: "image",
               title: {
                 type: "plain_text",
-                text: title + " by " + creator,
+                text: artworkLabel,
                 emoji: true
               },
               image_url: img,
-              alt_text: title + " by " + creator
+              alt_text: artworkLabel
             },
             {
               type: "section",
