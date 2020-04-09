@@ -4,6 +4,9 @@ const { App } = require("@slack/bolt");
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const fetch = require("node-fetch");
 const axios = require("axios");
+const dotenv = require("dotenv");
+
+dotenv.config();
 
 // please keep all the credentials in the env file
 const app = new App({
