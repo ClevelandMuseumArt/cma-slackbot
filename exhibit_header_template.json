@@ -1,0 +1,47 @@
+{
+  "blocks": [
+      {
+      "block_id": "header_intro",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":speech_balloon: Today's Exhibition:"
+      }
+    },
+      {
+      "block_id": "header_title",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "prompts.title"
+      }
+    },
+      {
+      "block_id": "header_credits",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "generatedCredits"
+      }
+    },
+    {
+      "block_id": "header_prompt",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "prompts.resultPrompt"
+      }
+    },
+    {
+      "block_id": "header_image",
+      "type": "image",
+      "title": {
+        "type": "plain_text",
+        "text": "prompts.resultPromptTitle",
+        "emoji": true
+      },
+      "image_url": "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
+      "alt_text": "prompts.resultPromptTitle"
+    }
+  ]
+}

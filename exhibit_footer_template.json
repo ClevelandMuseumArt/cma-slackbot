@@ -1,0 +1,23 @@
+{
+  "blocks": [
+    {
+      "block_id":"footer_title",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "prompts.resultPromptConclusion"
+      }
+    },
+    {
+       "block_id":"footer_image",
+      "type": "image",
+      "title": {
+        "type": "plain_text",
+        "text": "See you tomorrow!",
+        "emoji": true
+      },
+      "image_url": "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
+      "alt_text": " "
+    }
+  ]
+}
