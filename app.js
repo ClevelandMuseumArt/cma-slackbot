@@ -5,6 +5,7 @@ var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const fetch = require("node-fetch");
 const axios = require("axios");
 const dotenv = require("dotenv");
+const logts = require("log-timestamp");
 const util = require("./utilities.js");
 
 // block templates
@@ -23,7 +24,7 @@ const app = new App({
 
 // scheduling varaibles
 const secondsInADay = 86400;
-const intervalOfScheduledExhibit = 3600; //in seconds
+const intervalOfScheduledExhibit = secondsInADay; //in seconds
 var exhibitScheduled = false;
 var scheduledPromptLocalDate; // TODO: needs to be updated in the intervals
 var scheduledExhibitLocalDate; // TODO: needs to be updated in the intervals
@@ -554,6 +555,8 @@ async function getAllUsersInChannel(context, channelId) {
     console.error(error);
   }
 
+  console.log(`Getting users for channel: ${channelId}`, users);
+  
   // making sure only real users are included
   for (var i = users.length - 1; i >= 0; i--) {
     // to get user info
@@ -851,7 +854,7 @@ app.command(
     //     }
 
     var input = command.text.split(":");
-    var imChannelId = payload.channel_id;
+    var imChannelId = postChannelId;
     var userId = payload.user_id;
 
     var inputHour = parseFloat(input[0]);

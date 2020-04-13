@@ -2,6 +2,7 @@ dependencies:
   '@slack/bolt': 1.6.0
   axios: 0.19.2
   dotenv: 8.2.0
+  log-timestamp: 0.3.0
   node-fetch: 2.6.0
   xmlhttprequest: 1.8.0
 packages:
@@ -401,6 +402,16 @@ packages:
       node: '>=0.10.0'
     resolution:
       integrity: sha1-EtSj3U5o4Lec6428hBc66A2RykQ=
+  /log-prefix/0.1.1:
+    dev: false
+    resolution:
+      integrity: sha512-aP1Lst8OCdZKATqzXDN0JBissNVZuiKLyo6hOXDBxaQ1jHDsaxh2J1i5Pp0zMy6ayTKDWfUlLMXyLaQe1PJ48g==
+  /log-timestamp/0.3.0:
+    dependencies:
+      log-prefix: 0.1.1
+    dev: false
+    resolution:
+      integrity: sha512-luRz6soxijd1aJh0GkLXFjKABihxthvTfWTzu3XhCgg5EivG2bsTpSd63QFbUgS+/KmFtL+0RfSpeaD2QvOV8Q==
   /media-typer/0.3.0:
     dev: false
     engines:
@@ -651,5 +662,6 @@ specifiers:
   '@slack/bolt': ^1.6.0
   axios: ^0.19.2
   dotenv: ^8.2.0
+  log-timestamp: ^0.3.0
   node-fetch: ^2.6.0
   xmlhttprequest: ^1.8.0
