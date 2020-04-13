@@ -15,6 +15,7 @@ var exhibit_template = require("./exhibit_template.json");
 var home_template = require("./app_home_template.json");
 var prompt_invoke_template = require("./prompt_invoke_template.json");
 var prompt_selection_template = require("./prompt_selection_template.json");
+var confirm_image_template = require("./confirm_image_template.json");
 
 dotenv.config();
 
@@ -127,45 +128,61 @@ const getPrompts = () => {
   var prompts = [
     // JEFF's PROMPTS
     {
-        title: "Happy Hour at the End of the World!",
-        prompt: "A pandemic is a great time for an adult beverage. Will you drink your quarantini from a \"cup\", \"jar\", \"bottle\", \"tumbler\" or \"chalice\"? Today’s exhibition: _The Happy Hour at the End of the World!_  ",
-        promptArtTitle: "Boy Drinking by Annibale Carracci",
-        promptArtImageUrl: "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
-        resultPrompt: "Well, your coworkers really hit the sauce today, here are their drunken selections for today’s exhibition: _The Happy Hour at the End of the World!_  ",
-        resultPromptConclusion: "It’s time to go home, and since you are already there, avoid a DIY on the way to the kitchen. Be sure to attend the next exhibition.",  
-        resultPromptTitle: "Boy Drinking by Annibale Carracci",
-        resultPromptImageUrl: "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
-        queryPattern: "primary_title:(\"__keyword__\")",
-        defaultQuery: "cup",
-        choiceWords: ["cup", "jar", "bottle", "tumbler", "chalice"],
+      title: "Happy Hour at the End of the World!",
+      prompt:
+        'A pandemic is a great time for an adult beverage. Will you drink your quarantini from a "cup", "jar", "bottle", "tumbler" or "chalice"? Today’s exhibition: _The Happy Hour at the End of the World!_  ',
+      promptArtTitle: "Boy Drinking by Annibale Carracci",
+      promptArtImageUrl:
+        "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
+      resultPrompt:
+        "Well, your coworkers really hit the sauce today, here are their drunken selections for today’s exhibition: _The Happy Hour at the End of the World!_  ",
+      resultPromptConclusion:
+        "It’s time to go home, and since you are already there, avoid a DIY on the way to the kitchen. Be sure to attend the next exhibition.",
+      resultPromptTitle: "Boy Drinking by Annibale Carracci",
+      resultPromptImageUrl:
+        "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
+      queryPattern: 'primary_title:("__keyword__")',
+      defaultQuery: "cup",
+      choiceWords: ["cup", "jar", "bottle", "tumbler", "chalice"]
     },
     {
-        title: "See the World from your Sofa",
-        prompt: "See the world from the safety of your sofa. If you could leave home, would you visit the \"city\", the \"beach\", or the \"countryside\"? Today’s art exhibition: _See the World from your Sofa._  ",
-        promptArtTitle: "Piazza San Marco, Venice by Francesco Guardi",
-        promptArtImageUrl: "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
-        resultPrompt: "Today your coworkers have traveled the world and back, in their pajamas, for today’s Exhibition: _See the World from your Sofa._  ",
-        resultPromptConclusion: "The show was a smashing success! Be well. Be safe. And please, STAY AT HOME!!!! See you tomorrow. ",  
-        resultPromptTitle: "Piazza San Marco, Venice by Francesco Guardi",
-        resultPromptImageUrl: "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
-        queryPattern: "primary_title:(\"__keyword__\") AND NOT sketchbook AND NOT ohio",
-        defaultQuery: "landscape",
-        choiceWords: ["city", "beach", "countryside"],
-        alternates: {"countryside": ["landscape"]},
+      title: "See the World from your Sofa",
+      prompt:
+        'See the world from the safety of your sofa. If you could leave home, would you visit the "city", the "beach", or the "countryside"? Today’s art exhibition: _See the World from your Sofa._  ',
+      promptArtTitle: "Piazza San Marco, Venice by Francesco Guardi",
+      promptArtImageUrl:
+        "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
+      resultPrompt:
+        "Today your coworkers have traveled the world and back, in their pajamas, for today’s Exhibition: _See the World from your Sofa._  ",
+      resultPromptConclusion:
+        "The show was a smashing success! Be well. Be safe. And please, STAY AT HOME!!!! See you tomorrow. ",
+      resultPromptTitle: "Piazza San Marco, Venice by Francesco Guardi",
+      resultPromptImageUrl:
+        "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
+      queryPattern:
+        'primary_title:("__keyword__") AND NOT sketchbook AND NOT ohio',
+      defaultQuery: "landscape",
+      choiceWords: ["city", "beach", "countryside"],
+      alternates: { countryside: ["landscape"] }
     },
     {
-        title: "WWC: Working Without Clothing",
-        prompt: "*Working from home allows for unimaginable liberty! Do you prefer \"standing\", \"sitting\", or \"reclining\" while wearing just your smile (and your laptop)? Today’s exhibition: _WWC: Working Without Clothing._ *  ",
-        promptArtTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
-        promptArtImageUrl: "https://openaccess-cdn.clevelandart.org/1998.55/1998.55_web.jpg",
-        resultPrompt: "Your coworkers have made some revealing selections for today’s exhibition: _WWC: Working Without Clothing_  ",
-        resultPromptConclusion: "Brilliant choices. Now put on some pants, please. Don’t forget to join us for tomorrow’s exhibition.",  
-        resultPromptTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
-        resultPromptImageUrl: "https://openaccess-cdn.clevelandart.org/1998.55/1998.55_web.jpg",
-        queryPattern: "__keyword__ AND nude",
-        defaultQuery: "nude",
-        choiceWords: ["standing", "seated", "reclining"],
-        substitutions: {"sitting": "seated"},
+      title: "WWC: Working Without Clothing",
+      prompt:
+        '*Working from home allows for unimaginable liberty! Do you prefer "standing", "sitting", or "reclining" while wearing just your smile (and your laptop)? Today’s exhibition: _WWC: Working Without Clothing._ *  ',
+      promptArtTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
+      promptArtImageUrl:
+        "https://openaccess-cdn.clevelandart.org/1998.55/1998.55_web.jpg",
+      resultPrompt:
+        "Your coworkers have made some revealing selections for today’s exhibition: _WWC: Working Without Clothing_  ",
+      resultPromptConclusion:
+        "Brilliant choices. Now put on some pants, please. Don’t forget to join us for tomorrow’s exhibition.",
+      resultPromptTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
+      resultPromptImageUrl:
+        "https://openaccess-cdn.clevelandart.org/1998.55/1998.55_web.jpg",
+      queryPattern: "__keyword__ AND nude",
+      defaultQuery: "nude",
+      choiceWords: ["standing", "seated", "reclining"],
+      substitutions: { sitting: "seated" }
     },
     // END JEFF's PROMPTS
     {
@@ -384,7 +401,7 @@ const getArts = async keyword => {
 
     if (results.data.info.total == 0) {
       query = parsedKeyword;
-      
+
       url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
       console.log("NO RESULTS, using keyword only, getting from: " + url);
       results = await axios.get(url);
@@ -558,7 +575,7 @@ async function getAllUsersInChannel(context, channelId) {
   }
 
   console.log(`Getting users for channel: ${channelId}`, users);
-  
+
   // making sure only real users are included
   for (var i = users.length - 1; i >= 0; i--) {
     // to get user info
@@ -937,11 +954,14 @@ async function exhibitScheduledMessage(context, delayedMins) {
         ":speech_balloon: " + "*" + prompts.title + "*";
     }
     if (headerBlocks[i].block_id === "header_credits") {
-      var creditString = ""
+      var creditString = "";
       for (var key in userData) {
         creditString = creditString.concat(`<@${key}>, `);
       }
-      headerBlocks[i].text.text = "Today's exhibition is curated by " + creditString + "and the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
+      headerBlocks[i].text.text =
+        "Today's exhibition is curated by " +
+        creditString +
+        "and the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
     }
     if (headerBlocks[i].block_id === "header_prompt") {
       headerBlocks[i].text.text = prompts.resultPrompt;
@@ -1026,7 +1046,8 @@ async function exhibitScheduledMessage(context, delayedMins) {
     // replace with correct content
     for (var i = 0; i < footerBlocks.length; i++) {
       if (footerBlocks[i].block_id === "footer_title") {
-        footerBlocks[i].text.text = ":speech_balloon: " + prompts.resultPromptConclusion;
+        footerBlocks[i].text.text =
+          ":speech_balloon: " + prompts.resultPromptConclusion;
       }
       if (footerBlocks[i].block_id === "footer_image") {
         footerBlocks[i].title.text = " "; // text can't be empty
@@ -1114,28 +1135,28 @@ async function promptInvoke(channelId, userId, context) {
   console.log(`invoking prompt on ${channelId}`);
   // create a block
   try {
-    
-  // update header block
-  var promptInvokeBlocks = prompt_invoke_template.blocks;
-  // replace with correct content
-  for (var i = 0; i < promptInvokeBlocks.length; i++) {
-    if (promptInvokeBlocks[i].block_id === "prompt_intro") {
-      promptInvokeBlocks[i].text.text = "Today's Exhibition:";
+    // update header block
+    var promptInvokeBlocks = prompt_invoke_template.blocks;
+    // replace with correct content
+    for (var i = 0; i < promptInvokeBlocks.length; i++) {
+      if (promptInvokeBlocks[i].block_id === "prompt_intro") {
+        promptInvokeBlocks[i].text.text = "Today's Exhibition:";
+      }
+      if (promptInvokeBlocks[i].block_id === "prompt_title") {
+        promptInvokeBlocks[i].text.text =
+          ":speech_balloon: " + "*" + prompts.title + "*";
+      }
+
+      if (promptInvokeBlocks[i].block_id === "prompt_image") {
+        promptInvokeBlocks[i].title.text = prompts.promptArtTitle;
+        promptInvokeBlocks[i].image_url = prompts.promptArtImageUrl;
+        promptInvokeBlocks[i].alt_text = prompts.promptArtTitle;
+      }
+      if (promptInvokeBlocks[i].block_id === "prompt_prompt") {
+        promptInvokeBlocks[i].text.text = ":speech_balloon: " + prompts.prompt;
+      }
     }
-    if (promptInvokeBlocks[i].block_id === "prompt_title") {
-      promptInvokeBlocks[i].text.text = ":speech_balloon: " + "*" + prompts.title + "*";
-    }
-    
-    if (promptInvokeBlocks[i].block_id === "prompt_image") {
-      promptInvokeBlocks[i].title.text = prompts.promptArtTitle;
-      promptInvokeBlocks[i].image_url = prompts.promptArtImageUrl;
-      promptInvokeBlocks[i].alt_text = prompts.promptArtTitle;
-    }
-    if (promptInvokeBlocks[i].block_id === "prompt_prompt") {
-      promptInvokeBlocks[i].text.text = ":speech_balloon: " + prompts.prompt;
-    }
-  }
-    
+
     const result = await app.client.chat.postMessage({
       token: context.botToken,
       // Channel to send message to
@@ -1145,6 +1166,7 @@ async function promptInvoke(channelId, userId, context) {
       // Text in the notification
       text: prompts.prompt
     });
+
     console.log(result);
   } catch (error) {
     console.error(error);
@@ -1258,15 +1280,22 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
     void 0 // text response
   );
 
-  //       userData[userId].lastImgUrl = featured.images.web.url;
-  //       userData[userId].lastImgCreator = formatCreators(featured.creators);
-  //       userData[userId].lastImgTitle = featured.title;
-  //       userData[userId].artworkUrl = featured.url;
-
-  //       //adding state
-  //       userData[userId].awaitingTextResponse = true;
-
-  
+  // update selection block
+  var promptSelectionBlocks = prompt_selection_template.blocks;
+  // replace with correct content
+  for (var i = 0; i < promptSelectionBlocks.length; i++) {
+    if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
+      promptSelectionBlocks[i].title.text =
+        getUserData(userId).lastImgTitle +
+        " by " +
+        getUserData(userId).lastImgCreator;
+      promptSelectionBlocks[i].image_url = getUserData(userId).lastImgUrl;
+      promptSelectionBlocks[i].alt_text =
+        getUserData(userId).lastImgTitle +
+        " by " +
+        getUserData(userId).lastImgCreator;
+    }
+  }
   try {
     // Update the message
     const result = await app.client.chat.update({
@@ -1275,62 +1304,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
       ts: body.message.ts,
       // Channel of message
       channel: body.channel.id,
-      blocks: [
-        {
-          type: "divider"
-        },
-        {
-          type: "section",
-          text: {
-            type: "plain_text", //mk down should be supported as well if type changes
-            text: "Add this art to curation?",
-            emoji: true
-          }
-        },
-        {
-          type: "image",
-          title: {
-            type: "plain_text",
-            text:
-              getUserData(userId).lastImgTitle +
-              "\n" +
-              "by " +
-              getUserData(userId).lastImgCreator,
-            emoji: true
-          },
-          image_url: getUserData(userId).lastImgUrl,
-          alt_text:
-            getUserData(userId).lastImgTitle +
-            " by " +
-            getUserData(userId).lastImgCreator
-        },
-        {
-          type: "actions",
-          elements: [
-            {
-              type: "button",
-              text: {
-                type: "plain_text",
-                emoji: true,
-                text: "Shuffle"
-              },
-              value: "click_me_123",
-              action_id: "shuffle_button"
-            },
-            {
-              type: "button",
-              text: {
-                type: "plain_text",
-                emoji: true,
-                text: "I like this! :heart:"
-              },
-              style: "primary",
-              value: "click_me_123",
-              action_id: "confirm_button"
-            }
-          ]
-        }
-      ],
+      blocks: promptSelectionBlocks,
       text: "Adding this art?"
     });
     console.log(result);
@@ -1360,6 +1334,23 @@ app.action("confirm_button", async ({ ack, body, context }) => {
     //adding state
     getUserData(body.user.id).awaitingTextResponse = true;
 
+    // update selection block
+    var confirmImageBlocks = confirm_image_template.blocks;
+    // replace with correct content
+    for (var i = 0; i < confirmImageBlocks.length; i++) {
+      if (confirmImageBlocks[i].block_id === "confirm_image") {
+        confirmImageBlocks[i].title.text =
+          getUserData(userId).lastImgTitle +
+          " by " +
+          getUserData(userId).lastImgCreator;
+        confirmImageBlocks[i].image_url = getUserData(userId).lastImgUrl;
+        confirmImageBlocks[i].alt_text =
+          getUserData(userId).lastImgTitle +
+          " by " +
+          getUserData(userId).lastImgCreator;
+      }
+    }
+
     // Update the message
     const result = await app.client.chat.update({
       token: context.botToken,
@@ -1367,36 +1358,7 @@ app.action("confirm_button", async ({ ack, body, context }) => {
       ts: body.message.ts,
       // Channel of message
       channel: body.channel.id,
-      blocks: [
-        {
-          type: "image",
-          title: {
-            type: "plain_text",
-            text: "image1",
-            emoji: true
-          },
-          image_url: getUserData(userId).lastImgUrl,
-          alt_text: "image1"
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text:
-              "*You have made your selection! Tell us what you think about this art?*"
-          }
-        },
-        {
-          type: "context",
-          elements: [
-            {
-              type: "mrkdwn",
-              text:
-                "*Note:* Your selection and comment will be recorded. Reply *cancel* to cancel."
-            }
-          ]
-        }
-      ],
+      blocks: confirmImageBlocks,
       text: "Confirmed Selection"
     });
     console.log(result);
@@ -1468,7 +1430,9 @@ app.message("", async ({ message, payload, context, say }) => {
   if (getUserData(userId).awaitingTextResponse) {
     console.log("record user input from: " + message.user);
     await say(
-      `Great!, <@${message.user}>, your selection and comment is recorded. Reply *cancel* to cancel.`
+      `>:speech_balloon: Got it, <@${message.user}>! _${
+        getUserData(userId).lastImgTitle
+      }_ and your comment will be featured in today's exhibit. Or if you'd like to choose a different piece, reply with the word _cancel_`
     );
 
     //adding state
@@ -1508,9 +1472,7 @@ app.message("", async ({ message, payload, context, say }) => {
     // );
 
     // print user input in QUOTE
-    await say(
-      "> " + rawUserInput
-    );
+    await say("> " + rawUserInput);
     // await to get results
     const artObjects = await getArts(escapedInput);
 
@@ -1548,7 +1510,7 @@ app.message("", async ({ message, payload, context, say }) => {
     // userData[userId].textResponse = "";
 
     var creators = formatCreators(featured.creators);
-    
+
     getUserData(
       userId, // uesr id
       void 0, // chat channel id
@@ -1563,18 +1525,23 @@ app.message("", async ({ message, payload, context, say }) => {
       message.user // lastUser
     );
 
-  // update header block
-  var promptSelectionBlocks = prompt_selection_template.blocks;
-  // replace with correct content
-  for (var i = 0; i < promptSelectionBlocks.length; i++) {
-
-    if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
-      promptSelectionBlocks[i].title.text = getUserData(userId).lastImgTitle + " by " + getUserData(userId).lastImgCreator;
-      promptSelectionBlocks[i].image_url = getUserData(userId).lastImgUrl;
-      promptSelectionBlocks[i].alt_text = getUserData(userId).lastImgTitle + " by " + getUserData(userId).lastImgCreator;
+    // update selection block
+    var promptSelectionBlocks = prompt_selection_template.blocks;
+    // replace with correct content
+    for (var i = 0; i < promptSelectionBlocks.length; i++) {
+      if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
+        promptSelectionBlocks[i].title.text =
+          getUserData(userId).lastImgTitle +
+          " by " +
+          getUserData(userId).lastImgCreator;
+        promptSelectionBlocks[i].image_url = getUserData(userId).lastImgUrl;
+        promptSelectionBlocks[i].alt_text =
+          getUserData(userId).lastImgTitle +
+          " by " +
+          getUserData(userId).lastImgCreator;
+      }
     }
-  }
-    
+
     // create a block
     try {
       const result = await app.client.chat.postMessage({

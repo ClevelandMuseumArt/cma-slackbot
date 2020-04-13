@@ -1,0 +1,22 @@
+{
+    "blocks": [
+        {
+            "block_id": "confirm_image",
+            "type": "image",
+            "title": {
+                "type": "plain_text",
+                "text": "getUserData(body.user.id).lastImgTitle",
+                "emoji": true
+            },
+            "image_url": "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
+            "alt_text": "getUserData(userId).lastImgTitle"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ":speech_balloon: Fantastic choice! Tell me what made you choose this one."
+            }
+        }
+    ]
+}
