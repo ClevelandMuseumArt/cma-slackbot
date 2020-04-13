@@ -11,7 +11,8 @@
     "xmlhttprequest": "^1.8.0",
     "dotenv": "^8.2.0",
     "node-fetch": "^2.6.0",
-    "axios": "^0.19.2"
+    "axios": "^0.19.2",
+    "log-timestamp": "^0.3.0"
   },
   "engines": {
     "node": "11.x"
