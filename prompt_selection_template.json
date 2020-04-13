@@ -1,0 +1,41 @@
+{
+	"blocks": [
+		{
+			"block_id": "prompt_selection_img",
+			"type": "image",
+			"title": {
+				"type": "plain_text",
+				"text": "getUserData(userId).lastImgTitle \n by getUserData(userId).lastImgCreator",
+				"emoji": true
+			},
+			"image_url": "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
+			"alt_text": "getUserData(userId).lastImgTitle by getUserData(userId).lastImgCreator"
+		},
+		{
+			"type": "actions",
+			"elements": [
+				{
+					"type": "button",
+					"text": {
+						"type": "plain_text",
+						"emoji": true,
+						"text": "Shuffle"
+					},
+					"value": "click_me_123",
+					"action_id": "shuffle_button"
+				},
+				{
+					"type": "button",
+					"text": {
+						"type": "plain_text",
+						"emoji": true,
+						"text": "I like this! :heart:"
+					},
+					"style": "primary",
+					"value": "click_me_123",
+					"action_id": "confirm_button"
+				}
+			]
+		}
+	]
+}
