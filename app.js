@@ -122,6 +122,49 @@ const writeToAPI = async (slackbotId, data) => {
 
 const getPrompts = () => {
   var prompts = [
+    // JEFF's PROMPTS
+    {
+        title: "Happy Hour at the End of the World!",
+        prompt: "*A pandemic is a great time for an adult beverage. Will you drink your quarantini from a \"cup\", \"jar\", \"bottle\", \"tumbler\" or \"chalice\"? Today’s exhibition: _The Happy Hour at the End of the World!_*  ",
+        promptArtTitle: "Boy Drinking by Annibale Carracci",
+        promptArtImageUrl: "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
+        resultPrompt: "Well, your coworkers really hit the sauce today, here are their drunken selections for today’s exhibition: _The Happy Hour at the End of the World!_  ",
+        resultPromptConclusion: "It’s time to go home, and since you are already there, avoid a DIY on the way to the kitchen. Be sure to attend the next exhibition.",  
+        resultPromptTitle: "Boy Drinking by Annibale Carracci",
+        resultPromptImageUrl: "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
+        queryPattern: "primary_title:(\"__keyword__\")",
+        defaultQuery: "cup",
+        choiceWords: ["cup", "jar", "bottle", "tumbler", "chalice"],
+    },
+    {
+        title: "See the World from your Sofa",
+        prompt: "*See the world from the safety of your sofa. If you could leave home, would you visit the \"city\", the \"beach\", or the \"countryside\"? Today’s art exhibition: _See the World from your Sofa._*  ",
+        promptArtTitle: "Piazza San Marco, Venice by Francesco Guardi",
+        promptArtImageUrl: "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
+        resultPrompt: "Today your coworkers have traveled the world and back, in their pajamas, for today’s Exhibition: _See the World from your Sofa._  ",
+        resultPromptConclusion: "The show was a smashing success! Be well. Be safe. And please, STAY AT HOME!!!! See you tomorrow. ",  
+        resultPromptTitle: "Piazza San Marco, Venice by Francesco Guardi",
+        resultPromptImageUrl: "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
+        queryPattern: "primary_title:(\"__keyword__\") AND NOT sketchbook AND NOT ohio",
+        defaultQuery: "landscape",
+        choiceWords: ["city", "beach", "countryside"],
+        alternates: {"countryside": ["landscape"]},
+    },
+    {
+        title: "WWC: Working Without Clothing",
+        prompt: "*Working from home allows for unimaginable liberty! Do you prefer \"standing\", \"sitting\", or \"reclining\" while wearing just your smile (and your laptop)? Today’s exhibition: _WWC: Working Without Clothing._ *  ",
+        promptArtTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
+        promptArtImageUrl: "https://openaccess-cdn.clevelandart.org/1998.55/1998.55_web.jpg",
+        resultPrompt: "Your coworkers have made some revealing selections for today’s exhibition: _WWC: Working Without Clothing_  ",
+        resultPromptConclusion: "Brilliant choices. Now put on some pants, please. Don’t forget to join us for tomorrow’s exhibition.",  
+        resultPromptTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
+        resultPromptImageUrl: "https://openaccess-cdn.clevelandart.org/1998.55/1998.55_web.jpg",
+        queryPattern: "__keyword__ AND nude",
+        defaultQuery: "nude",
+        choiceWords: ["standing", "seated", "reclining"],
+        substitutions: {"sitting": "seated"},
+    },
+    // END JEFF's PROMPTS
     {
       title: "See the World from your Sofa",
       prompt:
@@ -318,7 +361,7 @@ const getPrompts = () => {
     }
   ];
 
-  var promptIndex = 9;
+  var promptIndex = 0;
 
   return prompts[promptIndex];
 };
@@ -492,7 +535,6 @@ app.command(
 
     // save channel id for the exhibit
     postChannelId = payload.channel_id;
-    await say("Hi! You have set this channel as default post channel. ");
   }
 );
 
