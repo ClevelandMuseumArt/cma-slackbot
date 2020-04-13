@@ -13,6 +13,8 @@ var exhibit_header_template = require("./exhibit_header_template.json");
 var exhibit_footer_template = require("./exhibit_footer_template.json");
 var exhibit_template = require("./exhibit_template.json");
 var home_template = require("./app_home_template.json");
+var prompt_invoke_template = require("./prompt_invoke_template.json");
+var prompt_selection_template = require("./prompt_selection_template.json");
 
 dotenv.config();
 
@@ -126,7 +128,7 @@ const getPrompts = () => {
     // JEFF's PROMPTS
     {
         title: "Happy Hour at the End of the World!",
-        prompt: "*A pandemic is a great time for an adult beverage. Will you drink your quarantini from a \"cup\", \"jar\", \"bottle\", \"tumbler\" or \"chalice\"? Today’s exhibition: _The Happy Hour at the End of the World!_*  ",
+        prompt: "A pandemic is a great time for an adult beverage. Will you drink your quarantini from a \"cup\", \"jar\", \"bottle\", \"tumbler\" or \"chalice\"? Today’s exhibition: _The Happy Hour at the End of the World!_  ",
         promptArtTitle: "Boy Drinking by Annibale Carracci",
         promptArtImageUrl: "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
         resultPrompt: "Well, your coworkers really hit the sauce today, here are their drunken selections for today’s exhibition: _The Happy Hour at the End of the World!_  ",
@@ -139,7 +141,7 @@ const getPrompts = () => {
     },
     {
         title: "See the World from your Sofa",
-        prompt: "*See the world from the safety of your sofa. If you could leave home, would you visit the \"city\", the \"beach\", or the \"countryside\"? Today’s art exhibition: _See the World from your Sofa._*  ",
+        prompt: "See the world from the safety of your sofa. If you could leave home, would you visit the \"city\", the \"beach\", or the \"countryside\"? Today’s art exhibition: _See the World from your Sofa._  ",
         promptArtTitle: "Piazza San Marco, Venice by Francesco Guardi",
         promptArtImageUrl: "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
         resultPrompt: "Today your coworkers have traveled the world and back, in their pajamas, for today’s Exhibition: _See the World from your Sofa._  ",
@@ -1112,30 +1114,34 @@ async function promptInvoke(channelId, userId, context) {
   console.log(`invoking prompt on ${channelId}`);
   // create a block
   try {
+    
+  // update header block
+  var promptInvokeBlocks = prompt_invoke_template.blocks;
+  // replace with correct content
+  for (var i = 0; i < promptInvokeBlocks.length; i++) {
+    if (promptInvokeBlocks[i].block_id === "prompt_intro") {
+      promptInvokeBlocks[i].text.text = "Today's Exhibition:";
+    }
+    if (promptInvokeBlocks[i].block_id === "prompt_title") {
+      promptInvokeBlocks[i].text.text = ":speech_balloon: " + "*" + prompts.title + "*";
+    }
+    
+    if (promptInvokeBlocks[i].block_id === "prompt_image") {
+      promptInvokeBlocks[i].title.text = prompts.promptArtTitle;
+      promptInvokeBlocks[i].image_url = prompts.promptArtImageUrl;
+      promptInvokeBlocks[i].alt_text = prompts.promptArtTitle;
+    }
+    if (promptInvokeBlocks[i].block_id === "prompt_prompt") {
+      promptInvokeBlocks[i].text.text = ":speech_balloon: " + prompts.prompt;
+    }
+  }
+    
     const result = await app.client.chat.postMessage({
       token: context.botToken,
       // Channel to send message to
       channel: channelId,
       // Main art selection interaction
-      blocks: [
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn", // styling slack message guide: https://tryshift.com/blog/apps-hub/slack-text-formats-bold-quote-more/
-            text: prompts.prompt
-          }
-        },
-        {
-          type: "image",
-          title: {
-            type: "plain_text",
-            text: prompts.promptArtTitle,
-            emoji: true
-          },
-          image_url: prompts.promptArtImageUrl,
-          alt_text: prompts.promptArtTitle
-        }
-      ],
+      blocks: promptInvokeBlocks,
       // Text in the notification
       text: prompts.prompt
     });
@@ -1260,6 +1266,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   //       //adding state
   //       userData[userId].awaitingTextResponse = true;
 
+  
   try {
     // Update the message
     const result = await app.client.chat.update({
@@ -1494,12 +1501,16 @@ app.message("", async ({ message, payload, context, say }) => {
 
   // for artwork selection
   if (getUserData(userId).awaitingArtworkSelection) {
-    await say(
-      "Hi! :wave: This is your input :arrow_right: :     " +
-        `${rawUserInput}` +
-        "\n Pulling result for you..."
-    );
+    // await say(
+    //   "Hi! :wave: This is your input :arrow_right: :     " +
+    //     `${rawUserInput}` +
+    //     "\n Pulling result for you..."
+    // );
 
+    // print user input in QUOTE
+    await say(
+      "> " + rawUserInput
+    );
     // await to get results
     const artObjects = await getArts(escapedInput);
 
@@ -1537,6 +1548,7 @@ app.message("", async ({ message, payload, context, say }) => {
     // userData[userId].textResponse = "";
 
     var creators = formatCreators(featured.creators);
+    
     getUserData(
       userId, // uesr id
       void 0, // chat channel id
@@ -1551,6 +1563,18 @@ app.message("", async ({ message, payload, context, say }) => {
       message.user // lastUser
     );
 
+  // update header block
+  var promptSelectionBlocks = prompt_selection_template.blocks;
+  // replace with correct content
+  for (var i = 0; i < promptSelectionBlocks.length; i++) {
+
+    if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
+      promptSelectionBlocks[i].title.text = getUserData(userId).lastImgTitle + " by " + getUserData(userId).lastImgCreator;
+      promptSelectionBlocks[i].image_url = getUserData(userId).lastImgUrl;
+      promptSelectionBlocks[i].alt_text = getUserData(userId).lastImgTitle + " by " + getUserData(userId).lastImgCreator;
+    }
+  }
+    
     // create a block
     try {
       const result = await app.client.chat.postMessage({
@@ -1558,62 +1582,7 @@ app.message("", async ({ message, payload, context, say }) => {
         // Channel to send message to
         channel: getUserData(userId).chatChannelId,
         // Main art selection interaction
-        blocks: [
-          {
-            type: "divider"
-          },
-          {
-            type: "section",
-            text: {
-              type: "plain_text", //mk down should be supported as well if type changes
-              text: "Add this art to curation?",
-              emoji: true
-            }
-          },
-          {
-            type: "image",
-            title: {
-              type: "plain_text",
-              text:
-                getUserData(userId).lastImgTitle +
-                "\n" +
-                "by " +
-                getUserData(userId).lastImgCreator,
-              emoji: true
-            },
-            image_url: getUserData(userId).lastImgUrl,
-            alt_text:
-              getUserData(userId).lastImgTitle +
-              " by " +
-              getUserData(userId).lastImgCreator
-          },
-          {
-            type: "actions",
-            elements: [
-              {
-                type: "button",
-                text: {
-                  type: "plain_text",
-                  emoji: true,
-                  text: "Shuffle"
-                },
-                value: "click_me_123",
-                action_id: "shuffle_button"
-              },
-              {
-                type: "button",
-                text: {
-                  type: "plain_text",
-                  emoji: true,
-                  text: "I like this! :heart:"
-                },
-                style: "primary",
-                value: "click_me_123",
-                action_id: "confirm_button"
-              }
-            ]
-          }
-        ],
+        blocks: promptSelectionBlocks,
         // Text in the notification
         text: "Shuffled Result"
       });

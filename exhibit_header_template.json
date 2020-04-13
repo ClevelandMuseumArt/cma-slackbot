@@ -16,20 +16,20 @@
         "text": "prompts.title"
       }
     },
-      {
-      "block_id": "header_credits",
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "generatedCredits"
-      }
-    },
     {
       "block_id": "header_prompt",
       "type": "section",
       "text": {
         "type": "mrkdwn",
         "text": "prompts.resultPrompt"
+      }
+    },
+      {
+      "block_id": "header_credits",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "generatedCredits"
       }
     },
     {
