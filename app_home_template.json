@@ -1,0 +1,275 @@
+{
+    "type": "home",
+    "blocks": [
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "*Welcome to CMA_SLACK_BOT* :tada: Make sure to set the default channel first! (will refine this!)"
+        }
+      },
+      {
+        "type": "divider"
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "plain_text",
+          "text": "Select exhibit time and prompt time.",
+          "emoji": true
+        }
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "Prompt Time:"
+        },
+        "accessory": {
+          "type": "static_select",
+          "action_id": "prompt_time_selection",
+          "placeholder": {
+            "type": "plain_text",
+            "text": "Select an hour in the day",
+            "emoji": true
+          },
+          "options": [
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "9AM",
+                "emoji": true
+              },
+              "value": "9"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "10AM",
+                "emoji": true
+              },
+              "value": "10"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "11AM",
+                "emoji": true
+              },
+              "value": "11"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "12PM",
+                "emoji": true
+              },
+              "value": "12"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "1PM",
+                "emoji": true
+              },
+              "value": "13"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "2PM",
+                "emoji": true
+              },
+              "value": "14"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "3PM",
+                "emoji": true
+              },
+              "value": "15"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "4PM",
+                "emoji": true
+              },
+              "value": "16"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "5PM",
+                "emoji": true
+              },
+              "value": "17"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "6PM",
+                "emoji": true
+              },
+              "value": "18"
+            }
+          ]
+        }
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "Exhibit time:"
+        },
+        "accessory": {
+          "type": "static_select",
+          "action_id": "exhibit_time_selection",
+          "placeholder": {
+            "type": "plain_text",
+            "text": "Select an hour in the day",
+            "emoji": true
+          },
+          "options": [
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "9AM",
+                "emoji": true
+              },
+              "value": "9"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "10AM",
+                "emoji": true
+              },
+              "value": "10"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "11AM",
+                "emoji": true
+              },
+              "value": "11"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "12PM",
+                "emoji": true
+              },
+              "value": "12"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "1PM",
+                "emoji": true
+              },
+              "value": "13"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "2PM",
+                "emoji": true
+              },
+              "value": "14"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "3PM",
+                "emoji": true
+              },
+              "value": "15"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "4PM",
+                "emoji": true
+              },
+              "value": "16"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "5PM",
+                "emoji": true
+              },
+              "value": "17"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "6PM",
+                "emoji": true
+              },
+              "value": "18"
+            }
+          ]
+        }
+      },
+      {
+        "type": "divider"
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "Exhibit prompt time has scheduled at: "
+        }
+      },
+      {
+        "block_id": "prompt_time",
+        "type": "section",
+        "text": {
+          "type": "plain_text",
+          "text": "Empty",
+          "emoji": true
+        }
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "plain_text",
+          "text": "Exhibit has scheduled at: ",
+          "emoji": true
+        }
+      },
+      {
+        "block_id": "exhibit_time",
+        "type": "section",
+        "text": {
+          "type": "plain_text",
+          "text": "Empty",
+          "emoji": true
+        }
+      },
+      {
+        "type": "divider"
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "Cancel exhibition and prompts"
+        },
+        "accessory": {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Cancel",
+            "emoji": true
+          },
+          "value": "click_me_123"
+        }
+      }
+    ]
+  }
+  

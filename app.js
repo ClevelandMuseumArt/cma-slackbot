@@ -5,6 +5,13 @@ var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const fetch = require("node-fetch");
 const axios = require("axios");
 const dotenv = require("dotenv");
+const util = require("./utilities.js");
+
+// block templates
+var exhibit_header_template = require("./exhibit_header_template.json");
+var exhibit_footer_template = require("./exhibit_footer_template.json");
+var exhibit_template = require("./exhibit_template.json");
+var home_template = require("./app_home_template.json");
 
 dotenv.config();
 
@@ -18,7 +25,8 @@ const app = new App({
 const secondsInADay = 86400;
 const intervalOfScheduledExhibit = 3600; //in seconds
 var exhibitScheduled = false;
-var scheduledLocalDate; // TODO: needs to be updated in the intervals
+var scheduledPromptLocalDate; // TODO: needs to be updated in the intervals
+var scheduledExhibitLocalDate; // TODO: needs to be updated in the intervals
 var scheduledExhibitInterval; // setInterval
 var scheduledPromptInterval; // setInterval
 var scheduledExhibitTimeout; // setTimeout
@@ -59,9 +67,13 @@ function getUserData(
   userData[userId].chatChannelId =
     chatChannelId || userData[userId].chatChannelId;
   userData[userId].awaitingTextResponse =
-    (awaitingTextResponse !== undefined) ? awaitingTextResponse: userData[userId].awaitingTextResponse;
+    awaitingTextResponse !== undefined
+      ? awaitingTextResponse
+      : userData[userId].awaitingTextResponse;
   userData[userId].awaitingArtworkSelection =
-    (awaitingArtworkSelection !== undefined) ? awaitingArtworkSelection : userData[userId].awaitingArtworkSelection;
+    awaitingArtworkSelection !== undefined
+      ? awaitingArtworkSelection
+      : userData[userId].awaitingArtworkSelection;
   userData[userId].keyword = keyword || userData[userId].keyword;
   userData[userId].lastImgUrl = lastImgUrl || userData[userId].lastImgUrl;
   userData[userId].lastImgCreator =
@@ -70,7 +82,7 @@ function getUserData(
   userData[userId].artworkUrl = artworkUrl || userData[userId].artworkUrl;
   userData[userId].textResponse = textResponse || userData[userId].textResponse;
   userData[userId].lastUser = lastUser || userData[userId].lastUser;
-    
+
   return userData[userId];
 }
 
@@ -133,14 +145,14 @@ const getPrompts = () => {
         "Working from home is liberating! Reply nude to select your favorite nude from the Cleveland Museum of Art’s collection to be included in today’s exhibition: WWC: Working Without Clothing.",
       promptArtTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
       promptArtImageUrl:
-        "https://piction.clevelandart.org/cma/ump.di?e=242775E0B50F25E80AABAE67FD160DD9369E552755341EF2E84AE13CE4E33C7C&s=21&se=1452375476&v=&f=2012.316_o10.jpg",
+        "https://openaccess-cdn.clevelandart.org/1939.63/1939.63_web.jpg",
       resultPrompt:
         "Your coworkers have made some revealing selections for the exhibition: WWC: Working Without Clothing",
       resultPromptConclusion:
         "Brilliant choices. Now put on some pants, please. Don’t forget to join us for tomorrow’s exhibition.",
       resultPromptTitle: "Nude Walking Like an Egyptian by Karl F. Struss",
       resultPromptImageUrl:
-        "https://piction.clevelandart.org/cma/ump.di?e=242775E0B50F25E80AABAE67FD160DD9369E552755341EF2E84AE13CE4E33C7C&s=21&se=1452375476&v=&f=2012.316_o10.jpg",
+        "https://openaccess-cdn.clevelandart.org/2012.316/2012.316_web.jpg",
       queryPattern: "__keyword__ AND nude",
       defaultQuery: "nude"
     },
@@ -306,8 +318,8 @@ const getPrompts = () => {
     }
   ];
 
-  var promptIndex = 4;
-  
+  var promptIndex = 9;
+
   return prompts[promptIndex];
 };
 
@@ -316,8 +328,6 @@ const getArts = async keyword => {
   var parsedKeyword = keyword.replace(/:/g, "");
   var prompts = getPrompts();
   var query = prompts.queryPattern.replace(/__keyword__/g, parsedKeyword);
-  
-  console.log("query---> "+query);
 
   var artworks = [];
 
@@ -429,13 +439,13 @@ app.message("random", ({ message, say }) => {
       },
       {
         type: "image",
-        title: {
-          type: "plain_text",
-          text: item.title, // title on top of the image
-          emoji: true
-        },
+        // title: {
+        //   type: "plain_text",
+        //   text: "title" + item.title, // title on top of the image
+        //   emoji: true
+        // },
         image_url: item.images.web.url,
-        alt_text: item.title // title when zoomed
+        alt_text: "alt" + item.title // title when zoomed
       },
       {
         type: "section",
@@ -618,10 +628,13 @@ async function calculateScheduledDate(
 
   // format to notify user of the choice
   var formattedLocalProposedDate = formatDate(proposedDate); // this is in user's local time
-  await say(`Next schedule happens on ${formattedLocalProposedDate}.`);
+
+  if (say) {
+    await say(`Next schedule happens on ${formattedLocalProposedDate}.`);
+  }
 
   // save for global access
-  scheduledLocalDate = formatDate(proposedDate);
+  scheduledExhibitLocalDate = formatDate(proposedDate);
 
   // this should be fed to the scheduled message
   var nextScheduleDate = new Date(
@@ -648,13 +661,11 @@ async function dailyExhibitTask(context) {
   scheduledPost(context);
 }
 
-async function triggerFirstPrompt(payload, context) {
+async function triggerFirstPrompt(channel_id, context) {
   console.log("first scheduled prompt");
 
-  var channelID = payload.channel_id;
-
   // use all users
-  var users = await getAllUsersInChannel(context, channelID);
+  var users = await getAllUsersInChannel(context, channel_id);
   console.log(`looping through users, number of users${users.length}`);
 
   for (var i = 0; i < users.length; i++) {
@@ -664,16 +675,15 @@ async function triggerFirstPrompt(payload, context) {
   }
 
   scheduledPromptInterval = setInterval(function() {
-    dailyPromptTask(payload, context);
+    dailyPromptTask(channel_id, context);
   }, intervalOfScheduledExhibit * 1000); // schedule interval in milliseconds
 }
 
-async function dailyPromptTask(payload, context) {
+async function dailyPromptTask(channel_id, context) {
   console.log("doing this in an interval!");
-  var channelID = payload.channel_id;
 
   // use all users
-  var users = await getAllUsersInChannel(context, channelID);
+  var users = await getAllUsersInChannel(context, channel_id);
   console.log(`looping through users, number of users ${users.length}`);
 
   for (var i = 0; i < users.length; i++) {
@@ -703,37 +713,84 @@ app.command(
     //     }
 
     var input = command.text.split(":");
-
+    var userId = payload.user_id;
     var inputHour = parseFloat(input[0]);
     var inputMinute = parseFloat(input[1]);
-
-    console.log(
-      `Set daily exhibition time at ${inputHour} hours, ${inputMinute} minutes`
-    );
 
     // make sure to curb the numbers
     if (inputHour < 0 || inputHour > 24) {
       await say(`Please try again with a number between 0 and 24.`);
       return;
     }
-    console.dir(`cma daily schedule command by user: ${payload.user_id}`);
 
-    var nextScheduleDate = await calculateScheduledDate(
-      payload.user_id,
-      context,
-      say,
-      inputHour,
-      inputMinute
-    );
-    var current = new Date();
-    var timeDifference = nextScheduleDate.getTime() - current.getTime();
-
-    // trigger the first exhibit, then the exhibit will keep the interval running
-    scheduledExhibitTimeout = setTimeout(function() {
-      triggerFirstExhibit(context);
-    }, timeDifference); // pass context to async function
+    await exhibitSchedule(context, say, userId, inputHour, inputMinute);
   }
 );
+
+// to reuse by command or app_home
+async function exhibitSchedule(context, say, userId, inputHour, inputMinute) {
+  clearInterval(scheduledPromptInterval);
+  clearTimeout(scheduledPromptTimeout);
+
+  console.log(
+    `Set daily exhibition time at ${inputHour} hours, ${inputMinute} minutes`
+  );
+
+  console.dir(`cma daily schedule command by user: ${userId}`);
+
+  var nextScheduleDate = await calculateScheduledDate(
+    userId,
+    context,
+    say,
+    inputHour,
+    inputMinute
+  );
+  var current = new Date();
+  var timeDifference = nextScheduleDate.getTime() - current.getTime();
+
+  // trigger the first exhibit, then the exhibit will keep the interval running
+  scheduledExhibitTimeout = setTimeout(function() {
+    triggerFirstExhibit(context);
+  }, timeDifference); // pass context to async function
+}
+
+// to reuse by command or app_home
+async function promptSchedule(
+  context,
+  say,
+  channelId,
+  userId,
+  inputHour,
+  inputMinute
+) {
+  var imChannelId = channelId;
+
+  clearInterval(scheduledPromptInterval);
+  clearTimeout(scheduledPromptTimeout);
+  // clean up user inputs
+  userData = {};
+
+  console.log(
+    `Set daily prompt time at ${inputHour} hours, ${inputMinute} minutes`
+  );
+
+  console.dir(`cma daily prompt command by user: ${userId}`);
+
+  var nextScheduleDate = await calculateScheduledDate(
+    userId,
+    context,
+    say,
+    inputHour,
+    inputMinute
+  );
+  var current = new Date();
+  var timeDifference = nextScheduleDate.getTime() - current.getTime();
+
+  // trigger the first exhibit, then the exhibit will keep the interval running
+  scheduledPromptTimeout = setTimeout(function() {
+    triggerFirstPrompt(imChannelId, context);
+  }, timeDifference); // pass context to async function
+}
 
 // schedule the prompt daily hour
 // Listen for a slash command invocation
@@ -742,11 +799,6 @@ app.command(
   async ({ ack, payload, context, say, command }) => {
     // Acknowledge the command request
     ack();
-
-    clearInterval(scheduledPromptInterval);
-    clearTimeout(scheduledPromptTimeout);
-    // clean up user inputs
-    userData = {};
 
     //// check if user is admin
     //     var isAdmin = await getIfAdmin(payload.user_id, context);
@@ -757,35 +809,26 @@ app.command(
     //     }
 
     var input = command.text.split(":");
+    var imChannelId = payload.channel_id;
+    var userId = payload.user_id;
 
     var inputHour = parseFloat(input[0]);
     var inputMinute = parseFloat(input[1]);
-
-    console.log(
-      `Set daily prompt time at ${inputHour} hours, ${inputMinute} minutes`
-    );
 
     // make sure to curb the numbers
     if (inputHour < 0 || inputHour > 24) {
       await say(`Please try again with a number between 0 and 24.`);
       return;
     }
-    console.dir(`cma daily prompt command by user: ${payload.user_id}`);
 
-    var nextScheduleDate = await calculateScheduledDate(
-      payload.user_id,
+    await promptSchedule(
       context,
       say,
+      imChannelId,
+      userId,
       inputHour,
       inputMinute
     );
-    var current = new Date();
-    var timeDifference = nextScheduleDate.getTime() - current.getTime();
-
-    // trigger the first exhibit, then the exhibit will keep the interval running
-    scheduledPromptTimeout = setTimeout(function() {
-      triggerFirstPrompt(payload, context);
-    }, timeDifference); // pass context to async function
   }
 );
 
@@ -835,7 +878,33 @@ async function exhibitScheduledMessage(context, delayedMins) {
     user_data: userData
   };
 
+  console.dir(exhibit_header_template.blocks);
   await writeToAPI(slackbotId, data);
+
+  // update header block
+  var headerBlocks = exhibit_header_template.blocks;
+  // replace with correct content
+  for (var i = 0; i < headerBlocks.length; i++) {
+    if (headerBlocks[i].block_id === "header_title") {
+      headerBlocks[i].text.text =
+        ":speech_balloon: " + "*" + prompts.title + "*";
+    }
+    if (headerBlocks[i].block_id === "header_credits") {
+      var creditString = ""
+      for (var key in userData) {
+        creditString = creditString.concat(`<@${key}>, `);
+      }
+      headerBlocks[i].text.text = "Today's exhibition is curated by " + creditString + "and the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
+    }
+    if (headerBlocks[i].block_id === "header_prompt") {
+      headerBlocks[i].text.text = prompts.resultPrompt;
+    }
+    if (headerBlocks[i].block_id === "header_image") {
+      headerBlocks[i].title.text = prompts.resultPromptTitle;
+      headerBlocks[i].image_url = prompts.resultPromptImageUrl;
+      headerBlocks[i].alt_text = prompts.resultPromptTitle;
+    }
+  }
 
   try {
     // the delayed opening statement
@@ -845,80 +914,78 @@ async function exhibitScheduledMessage(context, delayedMins) {
       token: context.botToken,
       channel: postChannelId, // find channel id or set current channel as post channel
       post_at: scheduledTime,
-      blocks: [
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: prompts.resultPrompt
-          }
-        },
-        {
-          type: "image",
-          title: {
-            type: "plain_text",
-            text: prompts.resultPromptTitle,
-            emoji: true
-          },
-          image_url: prompts.resultPromptImageUrl,
-          alt_text: prompts.resultPromptTitle
-        }
-      ],
+      blocks: exhibit_header_template.blocks,
       text: "Exhibition Time!"
     });
 
     for (var key in userData) {
       var thisUser = getUserData(key);
-      
+
       console.dir(thisUser);
-      
+
       if (thisUser.lastImgUrl && thisUser.lastImgTitle) {
-        var img = thisUser.lastImgUrl;
+        var userId = key;
+        var name = "";
+        // get user name
+        try {
+          // Call the users.info method using the built-in WebClient
+          const result = await app.client.users.info({
+            // The token you used to initialize your app is stored in the `context` object
+            token: context.botToken,
+            // Call users.info for the user that joined the workspace
+            user: userId
+          });
+
+          name = result.user.name;
+        } catch (error) {
+          console.error(error);
+        }
+
+        var artworkImg = thisUser.lastImgUrl;
         var artworkUrl = thisUser.artworkUrl;
         var textResponse = thisUser.textResponse;
-        var userId = key;
-        var artworkLabel = thisUser.lastImgTitle + (thisUser.lastImgCreator ? " by " + thisUser.lastImgCreator : "");
 
+        var artworkLabel =
+          thisUser.lastImgTitle +
+          (thisUser.lastImgCreator ? " by " + thisUser.lastImgCreator : "");
+        var userResponse = `"` + textResponse + `" - ` + name;
+
+        // update user block
+        var userBlocks = exhibit_template.blocks;
+        // replace with correct content
+        for (var i = 0; i < userBlocks.length; i++) {
+          if (userBlocks[i].block_id === "artwork_label") {
+            userBlocks[i].title.text = userResponse;
+            userBlocks[i].alt_text = artworkLabel;
+            userBlocks[i].image_url = artworkImg;
+          }
+          if (userBlocks[i].block_id === "cma_button") {
+            userBlocks[i].elements[0].url = artworkUrl; //cma website
+          }
+        }
         const result = await app.client.chat.scheduleMessage({
           // The token you used to initialize your app is stored in the `context` object
           token: context.botToken,
           text: "Exhibition Time!",
           channel: postChannelId, // find channel id or set current channel as post channel
           post_at: scheduledTime + 2, // delay so the prompt comes first
-          blocks: [
-            {
-              type: "divider"
-            },
-            {
-              type: "image",
-              title: {
-                type: "plain_text",
-                text: artworkLabel,
-                emoji: true
-              },
-              image_url: img,
-              alt_text: artworkLabel
-            },
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: `"` + textResponse + `" - ` + `<@${userId}>`
-              },
-              accessory: {
-                type: "button", // button to take the user to cma's website of that link
-                url: artworkUrl,
-                text: {
-                  type: "plain_text",
-                  text: "Visit Artwork",
-                  emoji: true
-                },
-                value: "visit_cma",
-                action_id: "visit_button"
-              }
-            }
-          ]
+          blocks: userBlocks
         });
+      }
+    }
+
+    // update footer block
+    var footerBlocks = exhibit_footer_template.blocks;
+    // replace with correct content
+    for (var i = 0; i < footerBlocks.length; i++) {
+      if (footerBlocks[i].block_id === "footer_title") {
+        footerBlocks[i].text.text = ":speech_balloon: " + prompts.resultPromptConclusion;
+      }
+      if (footerBlocks[i].block_id === "footer_image") {
+        footerBlocks[i].title.text = " "; // text can't be empty
+        footerBlocks[i].image_url =
+          "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif";
+        footerBlocks[i].alt_text = " "; // text can't be empty
       }
     }
 
@@ -929,34 +996,15 @@ async function exhibitScheduledMessage(context, delayedMins) {
       token: context.botToken,
       channel: postChannelId, // find channel id or set current channel as post channel
       post_at: scheduledTime + 5, // delayed more for the ending message
-      blocks: [
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: prompts.resultPromptConclusion
-          }
-        }
-        // {
-        //   type: "image",
-        //   title: {
-        //     type: "plain_text",
-        //     text: "ending prompt image example",
-        //     emoji: true
-        //   },
-        //   image_url:
-        //     "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
-        //   alt_text: "ending prompt image example"
-        // }
-      ],
+      blocks: footerBlocks,
       text: prompts.resultPromptConclusion
     });
   } catch (error) {
     console.error(error);
   }
-  
-    // clear input no matter what
-    userData = {};  
+
+  // clear input no matter what
+  userData = {};
 }
 
 // schedule the exhibit, currently just adding delay, can expand from here
@@ -983,7 +1031,6 @@ app.command(
     await exhibitScheduledMessage(context, delayedMins);
   }
 );
-
 
 // this is where the prompt message is composed
 async function promptInvoke(channelId, userId, context) {
@@ -1013,12 +1060,11 @@ async function promptInvoke(channelId, userId, context) {
     //   void 0
     // );
   }
-  
+
   // variables (to be updated dynamically)
   var prompts = getPrompts();
 
   console.log(`invoking prompt on ${channelId}`);
-
   // create a block
   try {
     const result = await app.client.chat.postMessage({
@@ -1054,13 +1100,14 @@ async function promptInvoke(channelId, userId, context) {
   }
 }
 
-
 app.command("/cma_test", async ({ ack, payload, context, command }) => {
   // Acknowledge the command request
   ack();
 
   console.log(payload.user_id);
   console.log("just testing....");
+  // util.fetchConversations();
+  console.log(util.conversationsStore);
 });
 
 // invoke cma prompt for demo
@@ -1102,7 +1149,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
 
   // disable button if user has answered
   if (
-    getUserData(userId).textResponse && 
+    getUserData(userId).textResponse &&
     getUserData(userId).textResponse.length > 0
   ) {
     return;
@@ -1308,6 +1355,14 @@ app.action("confirm_button", async ({ ack, body, context }) => {
 
 // Record after asking for response
 app.message("", async ({ message, payload, context, say }) => {
+  // verbose for testing
+  var rawUserInput = message.text;
+  var escapedInput = rawUserInput.replace(
+    /[\`\#\;\%\$\@\!\*\+\-\=\<\>\&\|\(\)\[\]\{\}\^\~\?\:\\/"]/g,
+    ""
+  );
+  console.log(`escaped user input: ${escapedInput}`);
+
   // before anything is setup a default channel should be in place
   if (postChannelId == "") {
     await say(
@@ -1327,9 +1382,9 @@ app.message("", async ({ message, payload, context, say }) => {
   //   await say("Hi! Only admin can do this");
   //   return;
   // }
-  
+
   // cancel
-  console.log(`user response: ${message.text}, user id: ${message.user}`);
+  console.log(`user response: ${rawUserInput}, user id: ${message.user}`);
 
   // Does user's record exist in userData yet?
   // if (!(userId in userData)) {
@@ -1341,16 +1396,16 @@ app.message("", async ({ message, payload, context, say }) => {
   // this will create new key if needed
   getUserData(userId);
 
-  if (message.text == "random") {
+  if (escapedInput == "random") {
     return;
   }
 
-  if (message.text == "seestate") {
+  if (escapedInput == "seestate") {
     return;
   }
 
   // TODO: fix cancel
-  if (message.text == "cancel") {
+  if (escapedInput == "cancel") {
     delete userData[userId];
 
     say(`Your selection have been canceled.`);
@@ -1375,13 +1430,13 @@ app.message("", async ({ message, payload, context, say }) => {
       void 0, // last img creator
       void 0, // last imge title
       void 0, // artwork url
-      message.text, // text response
+      rawUserInput, // text response
       void 0 // last user
     );
 
     // userData[userId].awaitingTextResponse = false;
     // userData[userId].awaitingArtworkSelection = false;
-    // userData[userId].textResponse = message.text;
+    // userData[userId].textResponse = escapedInput;
 
     // all responses were collected, scheduling message
     const secondsSinceEpoch = Date.now() / 1000;
@@ -1396,20 +1451,20 @@ app.message("", async ({ message, payload, context, say }) => {
   if (getUserData(userId).awaitingArtworkSelection) {
     await say(
       "Hi! :wave: This is your input :arrow_right: :     " +
-        `${message.text}` +
+        `${rawUserInput}` +
         "\n Pulling result for you..."
     );
 
     // await to get results
-    const artObjects = await getArts(message.text);
+    const artObjects = await getArts(escapedInput);
 
-    //userData[userId].keyword = message.text;
+    //userData[userId].keyword = escapedInput;
     getUserData(
       userId, // uesr id
       void 0, // chat channel id
       void 0, // awaiting text response
       void 0, // waiting artwork selection
-      message.text, // keyword
+      escapedInput, // keyword
       void 0, // last img url
       void 0, // last img creator
       void 0, // last imge title
@@ -1587,7 +1642,7 @@ async function getIfAdmin(userId, context) {
 app.event("app_home_opened", async ({ event, context }) => {
   var isUserAdmin = await getIfAdmin(event.user, context);
 
-  // make sure regular use does not mess with the settings
+  // make sure regular user does not mess with the settings
   if (!isUserAdmin) {
     try {
       /* view.publish is the method that your app uses to push a view to the Home tab */
@@ -1636,48 +1691,72 @@ app.event("app_home_opened", async ({ event, context }) => {
         callback_id: "home_view",
 
         /* body of the view */
-        blocks: [
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "*Welcome to CMA_SLACK_BOT* :tada:"
-            }
-          },
-          {
-            type: "divider"
-          },
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: `To get a head start. Please set the default channel by going to your desired channel and \`/cma_default_channel\`. \n After that, use \`/cma_daily_prompt_time\` and \`/cma_daily_exhibit_time\` to schedule daily prompt and exhibit time. \n Enjoy!`
-            }
-          },
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: `The current schedule for the next event is: ${scheduledLocalDate}`
-            }
-          }
-          // ,
-          // {
-          //   type: "actions",
-          //   elements: [
-          //     {
-          //       type: "button",
-          //       text: {
-          //         type: "plain_text",
-          //         text: "Cancel the exhibits!"
-          //       },
-          //       action_id: "cancel_exhibit"
-          //     }
-          //   ]
-          // }
-        ]
+        blocks: home_template.blocks
       }
     });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+// Listen for a button invocation with action_id `shuffle_button`
+// You must set up a Request URL under Interactive Components on your app configuration page
+app.action("prompt_time_selection", async ({ ack, payload, body, context }) => {
+  // Acknowledge the button request
+  ack();
+
+  try {
+    //console.log("prompt time selection triggered");
+    //console.log(payload);
+    //console.dir(body);
+
+    var inputHour = body.actions[0].selected_option.value;
+    var inputMinute = 0;
+    var userId = body.user.id;
+    // we have no channel id to send here
+    await promptSchedule(
+      context,
+      void 0,
+      postChannelId,
+      userId,
+      inputHour,
+      inputMinute
+    );
+
+    var homeBlocks = home_template.blocks;
+
+    // iterate over each element in the array
+    for (var i = 0; i < homeBlocks.length; i++) {
+      // look for the entry with a matching `code` value
+      if (homeBlocks[i].block_id === "prompt_time") {
+        homeBlocks[i].text.text = scheduledExhibitLocalDate;
+      }
+    }
+
+    console.dir(homeBlocks);
+
+    try {
+      /* view.publish is the method that your app uses to push a view to the Home tab */
+      const result = await app.client.views.publish({
+        /* retrieves your xoxb token from context */
+        token: context.botToken,
+
+        /* the user that opened your app's app home */
+        user_id: userId,
+
+        /* the view payload that appears in the app home*/
+        view: {
+          type: "home",
+          callback_id: "home_view",
+
+          /* body of the view */
+          blocks: homeBlocks
+        }
+      });
+    } catch (error) {
+      console.error(error);
+    }
+    //console.log(result);
   } catch (error) {
     console.error(error);
   }
