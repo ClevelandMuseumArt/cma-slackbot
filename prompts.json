@@ -4,7 +4,7 @@
         "promptArtTitle": "Boy Drinking by Annibale Carracci",
         "promptArtImageUrl": "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
         "resultPrompt": "Well, your coworkers really hit the sauce today, here are their drunken selections for today’s exhibition: _The Happy Hour at the End of the World!_  ",
-        "resultPromptConclusion": "It’s time to go home, and since you are already there, avoid a DIY on the way to the kitchen. Be sure to attend the next exhibition.",
+        "resultPromptConclusion": "It’s time to go home, and since you are already there, avoid a DUI on the way to the kitchen. Be sure to attend the next exhibition.",
         "resultPromptTitle": "Boy Drinking by Annibale Carracci",
         "resultPromptImageUrl": "https://openaccess-cdn.clevelandart.org/1994.4/1994.4_web.jpg",
         "queryPattern": "primary_title:(\"__keyword__\")",
