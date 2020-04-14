@@ -22,5 +22,18 @@ Use glitch to quickly test.
 
 \ ゜ o ゜)ノ
 
+## EXTERNAL DEPENDENCIES
+
+API for artworks at:
+https://openaccess-api.clevelandart.org/api/artworks/
+
+API for auth and saving exhibitions at:
+https://openaccess-api.clevelandart.org/api/slackbot/
+
+Graphic assets:
+https://
+
+
+
 
 

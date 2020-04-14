@@ -1153,6 +1153,27 @@ async function promptInvoke(channelId, userId, context) {
   try {
     // update header block
     var promptInvokeBlocks = prompt_invoke_template.blocks;
+    
+    // create buttons from choiceWords, for max of 5 (only 5 button action_ids)
+    var btns = [];
+    var btnNum = (prompts.choiceWords.length <= 5 ? prompts.choiceWords.length : 5);
+    
+    for (var i = 0; i < btnNum; i++) {
+      var btn = {
+					"type": "button",
+					"text": {
+						"type": "plain_text",
+						"text": prompts.choiceWords[i],
+						"emoji": true
+					},
+					"value": prompts.choiceWords[i],
+          "action_id": "choice_button_" + i
+				};
+      
+        btns.push(btn);
+      }
+    
+    
     // replace with correct content
     for (var i = 0; i < promptInvokeBlocks.length; i++) {
       if (promptInvokeBlocks[i].block_id === "prompt_intro") {
@@ -1168,9 +1189,14 @@ async function promptInvoke(channelId, userId, context) {
         promptInvokeBlocks[i].image_url = prompts.promptArtImageUrl;
         promptInvokeBlocks[i].alt_text = prompts.promptArtTitle;
       }
+      
       if (promptInvokeBlocks[i].block_id === "prompt_prompt") {
-        promptInvokeBlocks[i].text.text = ":speech_balloon: " + prompts.prompt;
+        promptInvokeBlocks[i].text.text = ":speech_balloon: " + prompts.prompt ;
       }
+      
+      if (promptInvokeBlocks[i].block_id === "word_buttons") {
+        promptInvokeBlocks[i].elements = btns;
+      }      
     }
 
     const result = await app.client.chat.postMessage({
@@ -1183,8 +1209,8 @@ async function promptInvoke(channelId, userId, context) {
       // Text in the notification
       text: " "
     });
-
-    console.log(result);
+    // console.log(promptInvokeBlocks)
+    // console.log(result);
   } catch (error) {
     console.error(error);
   }
@@ -1409,10 +1435,123 @@ for (var i = 0; i < numChoices; i++) {
   app.action(actionId, async ({ ack, payload, body, context }) => {
     var userId = body.user.id;
 
-    console.dir(payload);
+    // console.log(payload);
     // Acknowledge the button request
     ack();
+    
+    wordSelection(payload.value , userId, context.botToken);
   });
+}
+
+async function wordSelection(word, userId, botToken) {
+  // await say(
+  //   "Hi! :wave: This is your input :arrow_right: :     " +
+  //     `${rawUserInput}` +
+  //     "\n Pulling result for you..."
+  // );
+
+  // print user input in QUOTE
+  // await say("> " + rawUserInput);
+
+  // key confirmation, also links to a search on cma's website
+  // await say(
+  //   "> " +
+  //     "<" +
+  //     "https://www.clevelandart.org/art/collection/search?search=" +
+  //     word +
+  //     ">"
+  // );
+  // await to get results
+  const artObjects = await getArts(word);
+
+  //userData[userId].keyword = escapedInput;
+  getUserData(
+    userId, // uesr id
+    void 0, // chat channel id
+    void 0, // awaiting text response
+    void 0, // waiting artwork selection
+    word, // keyword
+    void 0, // last img url
+    void 0, // last img creator
+    void 0, // last imge title
+    void 0, // artwork url
+    void 0, // text response
+    void 0 // last user
+  );
+
+  console.log(artObjects.length);
+  var targetIndex = getRndInteger(0, artObjects.length - 1);
+
+  var featured = artObjects[targetIndex];
+
+  // store info and status
+  console.log("getting the art index of: " + targetIndex);
+  lastArtIndex = targetIndex;
+
+  //adding state
+  // userData[userId].awaitingTextResponse = true;
+  // userData[userId].lastImgUrl = featured.images.web.url;
+  // userData[userId].lastImgTitle = featured.title;
+  // userData[userId].lastImgCreator = formatCreators(featured.creators);
+  // userData[userId].artworkUrl = featured.url;
+  // userData[userId].lastUser = message.user;
+  // userData[userId].textResponse = "";
+
+  var creators = formatCreators(featured.creators);
+
+  getUserData(
+    userId, // uesr id
+    void 0, // chat channel id
+    true, // awaiting text response
+    void 0, // waiting artwork selection
+    void 0, // keyword
+    featured.images.web.url, // last img url
+    creators, // last img creator
+    featured.title, // last imge title
+    featured.url, // artwork url
+    "", // text response
+    userId // lastUser
+  );
+
+  // update selection block
+  var promptSelectionBlocks = prompt_selection_template.blocks;
+  var composedImageText = "";
+  if (
+    getUserData(userId).lastImgCreator &&
+    getUserData(userId).lastImgCreator != ""
+  ) {
+    composedImageText =
+      getUserData(userId).lastImgTitle +
+      " by " +
+      getUserData(userId).lastImgCreator;
+  } else {
+    composedImageText = getUserData(userId).lastImgTitle;
+  }
+  // replace with correct content
+  for (var i = 0; i < promptSelectionBlocks.length; i++) {
+    if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
+      promptSelectionBlocks[i].title.text = composedImageText;
+      promptSelectionBlocks[i].image_url = getUserData(userId).lastImgUrl;
+      promptSelectionBlocks[i].alt_text = composedImageText;
+    }
+  }
+
+  // create a block
+  try {
+    const result = await app.client.chat.postMessage({
+      token: botToken,
+      // Channel to send message to
+      channel: getUserData(userId).chatChannelId,
+      // Main art selection interaction
+      blocks: [],
+      attachments: [{ blocks: promptSelectionBlocks }],
+      // Text in the notification
+      text: " "
+    });
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 // Record after asking for response
