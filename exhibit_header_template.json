@@ -1,19 +1,19 @@
 {
   "blocks": [
-      {
-      "block_id": "header_intro",
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": ":speech_balloon: Today's Exhibition:"
-      }
-    },
-      {
+    {
       "block_id": "header_title",
       "type": "section",
       "text": {
         "type": "mrkdwn",
         "text": "prompts.title"
+      }
+    },
+    {
+      "block_id": "header_intro",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":speech_balloon: Welcome to today's Exhibition:"
       }
     },
     {
@@ -24,7 +24,7 @@
         "text": "prompts.resultPrompt"
       }
     },
-      {
+    {
       "block_id": "header_credits",
       "type": "section",
       "text": {
@@ -42,6 +42,24 @@
       },
       "image_url": "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
       "alt_text": "prompts.resultPromptTitle"
+    },
+    {
+      "block_id": "cma_button",
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "emoji": true,
+            "text": "Visit Artwork"
+          },
+          "url": "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
+          "style": "primary",
+          "value": "visit_cma",
+          "action_id": "visit_button"
+        }
+      ]
     }
   ]
 }
