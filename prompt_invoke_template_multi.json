@@ -37,6 +37,7 @@
 		},
 		{
 			"type": "actions",
+      "block_id": "word_buttons",
 			"elements": [
 				{
 					"type": "button",
