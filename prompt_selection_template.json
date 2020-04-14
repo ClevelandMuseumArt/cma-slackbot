@@ -5,12 +5,30 @@
 			"type": "image",
 			"title": {
 				"type": "plain_text",
-				"text": "getUserData(userId).lastImgTitle \n by getUserData(userId).lastImgCreator",
+				"text": " ",
 				"emoji": true
 			},
 			"image_url": "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
 			"alt_text": "getUserData(userId).lastImgTitle by getUserData(userId).lastImgCreator"
 		},
+    {
+      "block_id": "cma_button",
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "emoji": true,
+            "text": "Visit Artwork"
+          },
+          "url": "https://www.clevelandart.org/art/collection/search",
+          "style": "primary",
+          "value": "visit_cma",
+          "action_id": "visit_button"
+        }
+      ]
+    },    
 		{
 			"type": "actions",
 			"elements": [
