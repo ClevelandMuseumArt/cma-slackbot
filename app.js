@@ -977,7 +977,7 @@ async function exhibitScheduledMessage(context, delayedMins) {
       headerBlocks[i].text.text = prompts.resultPrompt;
     }
     if (headerBlocks[i].block_id === "header_image") {
-      headerBlocks[i].title.text = prompts.resultPromptTitle;
+      // headerBlocks[i].title.text = prompts.resultPromptTitle;
       headerBlocks[i].image_url = prompts.resultPromptImageUrl;
       headerBlocks[i].alt_text = prompts.resultPromptTitle;
     }
@@ -1063,12 +1063,6 @@ async function exhibitScheduledMessage(context, delayedMins) {
       if (footerBlocks[i].block_id === "footer_title") {
         footerBlocks[i].text.text =
           ":speech_balloon: " + prompts.resultPromptConclusion;
-      }
-      if (footerBlocks[i].block_id === "footer_image") {
-        footerBlocks[i].title.text = " "; // text can't be empty
-        footerBlocks[i].image_url =
-          "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif";
-        footerBlocks[i].alt_text = " "; // text can't be empty
       }
     }
 
@@ -1185,7 +1179,7 @@ async function promptInvoke(channelId, userId, context) {
       }
 
       if (promptInvokeBlocks[i].block_id === "prompt_image") {
-        promptInvokeBlocks[i].title.text = prompts.promptArtTitle;
+        // promptInvokeBlocks[i].title.text = prompts.promptArtTitle;
         promptInvokeBlocks[i].image_url = prompts.promptArtImageUrl;
         promptInvokeBlocks[i].alt_text = prompts.promptArtTitle;
       }
@@ -1341,10 +1335,14 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
 
   for (var i = 0; i < promptSelectionBlocks.length; i++) {
     if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
-      promptSelectionBlocks[i].title.text = composedImageText;
+      // promptSelectionBlocks[i].title.text = composedImageText;
       promptSelectionBlocks[i].image_url = getUserData(userId).lastImgUrl;
       promptSelectionBlocks[i].alt_text = composedImageText;
     }
+    
+    if (promptSelectionBlocks[i].block_id === "cma_button") {
+      promptSelectionBlocks[i].elements[0].url = getUserData(userId).artworkUrl;      
+    }    
   }
 
   try {
@@ -1404,10 +1402,14 @@ app.action("confirm_button", async ({ ack, body, context }) => {
     // replace with correct content
     for (var i = 0; i < confirmImageBlocks.length; i++) {
       if (confirmImageBlocks[i].block_id === "confirm_image") {
-        confirmImageBlocks[i].title.text = composedImageText;
+        // confirmImageBlocks[i].title.text = composedImageText;
         confirmImageBlocks[i].image_url = getUserData(userId).lastImgUrl;
         confirmImageBlocks[i].alt_text = composedImageText;
       }
+      
+      if (confirmImageBlocks[i].block_id === "cma_button") {
+        confirmImageBlocks[i].elements[0].url = getUserData(userId).artworkUrl;      
+      }      
     }
 
     // Update the message
@@ -1454,13 +1456,31 @@ async function wordSelection(word, userId, botToken) {
   // await say("> " + rawUserInput);
 
   // key confirmation, also links to a search on cma's website
-  // await say(
-  //   "> " +
+  // var wordIntro = "> " +
   //     "<" +
   //     "https://www.clevelandart.org/art/collection/search?search=" +
-  //     word +
-  //     ">"
-  // );
+  //     word + "|" + word +
+  //     ">";
+  var wordIntro = `> <https://www.clevelandart.org/art/collection/search?search=${word}|${word}>`;  
+  
+  const intro = await app.client.chat.postMessage({
+      token: botToken,
+      // Channel to send message to
+      channel: getUserData(userId).chatChannelId,
+      // Main art selection interaction
+      blocks: [
+        {
+          "block_id": "prompt_intro",
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": wordIntro
+          }
+        }        
+      ],
+      // Text in the notification
+      text: " "
+    });  
   // await to get results
   const artObjects = await getArts(word);
 
@@ -1530,9 +1550,13 @@ async function wordSelection(word, userId, botToken) {
   // replace with correct content
   for (var i = 0; i < promptSelectionBlocks.length; i++) {
     if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
-      promptSelectionBlocks[i].title.text = composedImageText;
+      // promptSelectionBlocks[i].title.text = composedImageText;
       promptSelectionBlocks[i].image_url = getUserData(userId).lastImgUrl;
       promptSelectionBlocks[i].alt_text = composedImageText;
+    }
+    
+    if (promptSelectionBlocks[i].block_id === "cma_button") {
+      promptSelectionBlocks[i].elements[0].url = getUserData(userId).artworkUrl;      
     }
   }
 
@@ -1619,7 +1643,7 @@ app.message("", async ({ message, payload, context, say }) => {
     await say(
       `>:speech_balloon: Got it, <@${message.user}>! _${
         getUserData(userId).lastImgTitle
-      }_ and your comment will be featured in today's exhibit. Or if you'd like to choose a different piece, reply with the word _cancel_`
+      }_ and your comment will be featured in today's exhibit.`
     );
 
     //adding state

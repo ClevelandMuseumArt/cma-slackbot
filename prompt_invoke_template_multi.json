@@ -21,7 +21,7 @@
 			"type": "image",
 			"title": {
 				"type": "plain_text",
-				"text": "prompts.promptArtTitle",
+				"text": " ",
 				"emoji": true
 			},
 			"image_url": "https://www.clevelandart.org/sites/default/files/5%20card%20logo.gif",
