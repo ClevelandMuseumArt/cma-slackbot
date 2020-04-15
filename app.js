@@ -42,6 +42,7 @@ var scheduledPromptTimeout; // setTimrout
 
 var lastArtIndex = 0;
 var postChannelId = "";
+var promptIndex = 2;
 //var chatChannelId = ""; // QUESTION: put in user data?
 
 var userData = {};
@@ -129,8 +130,6 @@ const writeToAPI = async (slackbotId, data) => {
 };
 
 const getPrompts = () => {
-  var promptIndex = 0;
-
   return prompts[promptIndex];
 };
 
@@ -239,8 +238,9 @@ function getNextRndInteger(src, min, max) {
 
 // Just an state test
 app.message("seestate", async ({ message, say }) => {
-  console.info("#########################");
+  console.info("##########STATE##########");
   console.info("channelId: " + postChannelId);
+  console.info("promptIndex: " + promptIndex);
   console.info(userData);
   console.info("#########################");
 });
@@ -633,6 +633,12 @@ app.command(
 
     var inputHour = parseFloat(input[0]);
     var inputMinute = parseFloat(input[1]);
+    
+    // take prompt index as optional 3rd argument
+    // if (input.length > 2) {
+    //   promptIndex = parseInt(input[2]);
+    //   console.log(`SETTING PROMPT ${promptIndex}`)
+    // }
 
     // make sure to curb the numbers
     if (inputHour < 0 || inputHour > 24) {
@@ -1186,7 +1192,11 @@ for (var i = 0; i < numChoices; i++) {
     // Acknowledge the button request
     ack();
     
-    wordSelection(payload.value , userId, context.botToken);
+    // TODO: this is how it should *all* work, does userData content exist, not
+    // in "awaiting*" flags
+    if (!getUserData(userId).keyword) {
+      wordSelection(payload.value , userId, context.botToken);
+    } 
   });
 }
 
