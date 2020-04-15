@@ -1506,7 +1506,7 @@ app.message("", async ({ message, payload, context, say }) => {
     // replace with correct content
     for (var i = 0; i < promptSelectionBlocks.length; i++) {
       if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
-        promptSelectionBlocks[i].title.text = composedImageText;
+        // promptSelectionBlocks[i].title.text = composedImageText;
         promptSelectionBlocks[i].image_url = getUserData(userId).lastImgUrl;
         promptSelectionBlocks[i].alt_text = composedImageText;
       }
