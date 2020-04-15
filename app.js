@@ -129,17 +129,25 @@ const writeToAPI = async (slackbotId, data) => {
 };
 
 const getPrompts = () => {
-  var promptIndex = 1;
+  var promptIndex = 0;
 
   return prompts[promptIndex];
 };
 
 const getArts = async keyword => {
   var limit = 50;
+  var prompt = getPrompts();
+  
   var parsedKeyword = keyword.replace(/:/g, "");
-  var prompts = getPrompts();
-  var query = prompts.queryPattern.replace(/__keyword__/g, parsedKeyword);
+  
+  if (prompt.substitutions && prompt.substitutions[parsedKeyword]) {
+    parsedKeyword = prompt.substitutions[parsedKeyword];
+  }
+  
+  var query = prompt.queryPattern.replace(/__keyword__/g, parsedKeyword);
 
+  console.log(query);
+  
   var artworks = [];
 
   try {
@@ -156,7 +164,7 @@ const getArts = async keyword => {
     }
 
     if (results.data.info.total == 0) {
-      query = prompts.defaultQuery;
+      query = prompt.defaultQuery;
 
       url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
       console.log(
@@ -166,6 +174,8 @@ const getArts = async keyword => {
     }
 
     artworks = results.data.data;
+    
+    console.log(artworks.length + " RESULTS");
   } catch (error) {
     console.log(error);
   }
@@ -207,7 +217,7 @@ function getItem(id) {
 function getRandomItem() {
   var size = arrayOfObjects.length;
   var index = getRndInteger(0, size - 1);
-  // console.log("length" + size + "chosen index" + index);
+  
   return arrayOfObjects[index];
 }
 
@@ -415,9 +425,6 @@ async function calculateScheduledDate(
   proposedDate.setHours(proposedHourOfTheDay);
   proposedDate.setMinutes(offsetInMinutes);
   proposedDate.setSeconds(0);
-
-  // console.log(proposedDate.getTime());
-  // console.log(Date.now());
 
   // WARNING: comment out this section if you want to test stuff
   //comparing the proposed date with the actual date
@@ -950,8 +957,6 @@ async function promptInvoke(channelId, userId, context) {
       // Text in the notification
       text: " "
     });
-    // console.log(promptInvokeBlocks)
-    // console.log(result);
   } catch (error) {
     console.error(error);
   }
@@ -973,8 +978,6 @@ app.command("/cma_invoke", async ({ ack, payload, context, command }) => {
   // Acknowledge the command request
   ack();
 
-  console.log(payload.user_id);
-
   await promptInvoke(payload.channel_id, payload.user_id, context);
 });
 
@@ -984,7 +987,6 @@ app.action("visit_button", async ({ ack, body, context }) => {
   // Acknowledge the button request
   ack();
 
-  console.log("visiting cma website");
   // ack() and do nothing. this should get rid of the exclamation mark
 });
 
@@ -1017,7 +1019,6 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   const artObjects = await getArts(getUserData(userId).keyword);
   //console.dir(artObjects);
 
-  console.log(artObjects.length);
   var targetIndex = lastArtIndex;
 
   if (targetIndex < artObjects.length - 2) {
@@ -1104,7 +1105,6 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
       attachments: [{ blocks: promptSelectionBlocks }],
       text: " "
     });
-    console.log(result);
   } catch (error) {
     console.error(error);
   }
@@ -1170,7 +1170,6 @@ app.action("confirm_button", async ({ ack, body, context }) => {
       attachments: [{ blocks: confirmImageBlocks }],
       text: " "
     });
-    console.log(result);
   } catch (error) {
     console.error(error);
   }
@@ -1184,7 +1183,6 @@ for (var i = 0; i < numChoices; i++) {
   app.action(actionId, async ({ ack, payload, body, context }) => {
     var userId = body.user.id;
 
-    // console.log(payload);
     // Acknowledge the button request
     ack();
     
@@ -1246,7 +1244,6 @@ async function wordSelection(word, userId, botToken) {
     void 0 // last user
   );
 
-  console.log(artObjects.length);
   var targetIndex = getRndInteger(0, artObjects.length - 1);
 
   var featured = artObjects[targetIndex];
@@ -1319,7 +1316,6 @@ async function wordSelection(word, userId, botToken) {
       // Text in the notification
       text: " "
     });
-    console.log(result);
   } catch (error) {
     console.error(error);
   }
@@ -1460,7 +1456,6 @@ app.message("", async ({ message, payload, context, say }) => {
       void 0 // last user
     );
 
-    console.log(artObjects.length);
     var targetIndex = getRndInteger(0, artObjects.length - 1);
 
     var featured = artObjects[targetIndex];
@@ -1529,7 +1524,6 @@ app.message("", async ({ message, payload, context, say }) => {
         // Text in the notification
         text: " "
       });
-      console.log(result);
     } catch (error) {
       console.error(error);
     }
@@ -1550,8 +1544,7 @@ app.message("cancel", async ({ message, say }) => {
 app.message("wake me up", async ({ message, context, say }) => {
   const secondsSinceEpoch = Date.now() / 1000;
   var scheduledTime = secondsSinceEpoch + 10; // 10 sec from now
-  console.log(secondsSinceEpoch);
-
+  
   if (postChannelId != "") {
     try {
       // Call the chat.scheduleMessage method with a token
@@ -1663,10 +1656,6 @@ app.action("prompt_time_selection", async ({ ack, payload, body, context }) => {
   ack();
 
   try {
-    //console.log("prompt time selection triggered");
-    //console.log(payload);
-    //console.dir(body);
-
     var inputHour = body.actions[0].selected_option.value;
     var inputMinute = 0;
     var userId = body.user.id;
@@ -1713,7 +1702,6 @@ app.action("prompt_time_selection", async ({ ack, payload, body, context }) => {
     } catch (error) {
       console.error(error);
     }
-    //console.log(result);
   } catch (error) {
     console.error(error);
   }
