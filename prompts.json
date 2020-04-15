@@ -21,7 +21,8 @@
         "resultPromptTitle": "Piazza San Marco, Venice by Francesco Guardi",
         "resultPromptImageUrl": "https://openaccess-cdn.clevelandart.org/1951.83/1951.83_web.jpg",
         "_queryPattern": "primary_title:(\"__keyword__\") AND NOT sketchbook AND NOT ohio",
-        "queryPattern": "(NOT description:(\"portrait\") AND (primary_title:(\"__keyword__\") OR description:(\"__keyword__\") OR fun_fact:(\"__keyword__\")) AND (department:(\"Drawings\") OR department:(\"American Painting and Sculpture\") OR department:(\"European Painting and Sculpture\") OR department:(\"Photography\"))",
+        "_queryPattern": "(NOT description:(\"portrait\") AND (primary_title:(\"__keyword__\") OR description:(\"__keyword__\") OR fun_fact:(\"__keyword__\")) AND (department:(\"Drawings\") OR department:(\"American Painting and Sculpture\") OR department:(\"European Painting and Sculpture\") OR department:(\"Photography\"))",
+        "queryPattern": "__keyword__ AND NOT description:(\"portrait\") AND (department:(\"Drawings\") OR department:(\"Prints\") OR department:(\"American Painting and Sculpture\") OR department:(\"European Painting and Sculpture\") OR department:(\"Photography\"))",
         "defaultQuery": "landscape",
         "choiceWords": ["city", "beach", "countryside"],
         "substitutions": {
