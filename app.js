@@ -23,11 +23,15 @@ var prompts = require("./prompts.json");
 
 dotenv.config();
 
-// please keep all the credentials in the env file
-const app = new App({
-  token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET
-});
+const authorizeFn = async ({teamId}) => {
+  return {
+    botToken: process.env['SLACK_BOT_TOKEN_'+teamId],
+    botId: process.env['SLACK_BOT_ID_'+teamId],
+    botUserId: process.env['SLACK_BOT_USER_ID_'+teamId]
+  };
+}
+
+const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET});
 
 // scheduling varaibles
 const secondsInADay = 86400;
@@ -42,7 +46,7 @@ var scheduledPromptTimeout; // setTimrout
 
 var lastArtIndex = 0;
 var postChannelId = "";
-var promptIndex = 0;
+var promptIndex = 1;
 //var chatChannelId = ""; // QUESTION: put in user data?
 
 
@@ -973,10 +977,16 @@ app.command("/cma_test", async ({ ack, payload, context, command }) => {
   // Acknowledge the command request
   ack();
 
+  console.log("payload....");
   console.log(payload);
-  console.log("just testing....");
-  // util.fetchConversations();
-  console.log(util.conversationsStore);
+
+  console.log("context....");
+  console.log(context);
+
+  
+  const keyz = JSON.parse(process.env.KEYZ);
+  
+  console.log(keyz['team2']);
 });
 
 // invoke cma prompt for demo
