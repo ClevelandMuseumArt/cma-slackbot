@@ -31,7 +31,12 @@ API for auth and saving exhibitions at:
 https://openaccess-api.clevelandart.org/api/slackbot/
 
 Graphic assets:
-https://
+https://cma-artlens.s3.amazonaws.com/slackbot/
+
+## INSTALLATION (IMPORTANT!!)
+
+* set default channel
+* add app to channel
 
 
 

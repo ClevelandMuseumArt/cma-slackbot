@@ -42,8 +42,9 @@ var scheduledPromptTimeout; // setTimrout
 
 var lastArtIndex = 0;
 var postChannelId = "";
-var promptIndex = 2;
+var promptIndex = 0;
 //var chatChannelId = ""; // QUESTION: put in user data?
+
 
 var userData = {};
 function getUserData(
@@ -691,8 +692,9 @@ async function exhibitScheduledMessage(context, delayedMins) {
   delayedMins += 0.2; // to safe guard if delayedMins were 0;
   const secondsSinceEpoch = Date.now() / 1000;
   var scheduledTime = secondsSinceEpoch + delayedMins * 60.0; // 10 sec from now
-  console.log("current time" + secondsSinceEpoch);
-  console.log("delayed to time" + scheduledTime);
+  console.log("current time " + secondsSinceEpoch);
+  console.log("delayed to time"  + scheduledTime);
+  console.log(`SEND TO CHANNEL ${postChannelId}`);
 
   // prompt variables
   var prompts = getPrompts();
@@ -703,7 +705,6 @@ async function exhibitScheduledMessage(context, delayedMins) {
     user_data: userData
   };
 
-  console.dir(exhibit_header_template.blocks);
   await writeToAPI(slackbotId, data);
 
   // update header block
@@ -1602,40 +1603,6 @@ async function getIfAdmin(userId, context) {
 app.event("app_home_opened", async ({ event, context }) => {
   var isUserAdmin = await getIfAdmin(event.user, context);
 
-  // make sure regular user does not mess with the settings
-  if (!isUserAdmin) {
-    try {
-      /* view.publish is the method that your app uses to push a view to the Home tab */
-      const result = await app.client.views.publish({
-        /* retrieves your xoxb token from context */
-        token: context.botToken,
-
-        /* the user that opened your app's app home */
-        user_id: event.user,
-
-        /* the view payload that appears in the app home*/
-        view: {
-          type: "home",
-          callback_id: "home_view",
-
-          /* body of the view */
-          blocks: [
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: "*Welcome to CMA_SLACK_BOT* :tada:"
-              }
-            }
-          ]
-        }
-      });
-    } catch (error) {
-      console.error(error);
-    }
-    return;
-  }
-
   try {
     /* view.publish is the method that your app uses to push a view to the Home tab */
     const result = await app.client.views.publish({
@@ -1651,12 +1618,43 @@ app.event("app_home_opened", async ({ event, context }) => {
         callback_id: "home_view",
 
         /* body of the view */
-        blocks: home_template.blocks
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*Welcome to ArtLens Slacker* :art:"
+            }
+          }
+        ]
       }
     });
   } catch (error) {
     console.error(error);
   }
+
+  //TODO: admin view?
+//   try {
+//     /* view.publish is the method that your app uses to push a view to the Home tab */
+//     const result = await app.client.views.publish({
+//       /* retrieves your xoxb token from context */
+//       token: context.botToken,
+
+//       /* the user that opened your app's app home */
+//       user_id: event.user,
+
+//       /* the view payload that appears in the app home*/
+//       view: {
+//         type: "home",
+//         callback_id: "home_view",
+
+//         /* body of the view */
+//         blocks: home_template.blocks
+//       }
+//     });
+//   } catch (error) {
+//     console.error(error);
+//   }
 });
 
 // Listen for a button invocation with action_id `shuffle_button`
