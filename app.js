@@ -87,56 +87,6 @@ const stateClearUserData = (teamId) => {
 
 // END STATE FUNCTIONS
 
-var userData = {};
-function getUserData(
-  userId,
-  chatChannelId,
-  awaitingTextResponse,
-  awaitingArtworkSelection,
-  keyword,
-  lastImgUrl,
-  lastImgCreator,
-  lastImgTitle,
-  artworkUrl,
-  textResponse,
-  lastUser
-) {
-  // Does user's record exist in userData yet?
-  if (!(userId in userData)) {
-    userData[userId] = {
-      // awaitingTextResponse: false,
-      // awaitingArtworkSelection: true,
-      // // lastImgUrl: "",
-      // lastImgCreator: "",
-      // lastImgTitle: "",
-      // // artworkUrl: "",
-      // textResponse: ""
-    };
-    console.log("adding new user");
-  }
-  // replace/update user data, check if undefined.
-  userData[userId].chatChannelId =
-    chatChannelId || userData[userId].chatChannelId;
-  userData[userId].awaitingTextResponse =
-    awaitingTextResponse !== undefined
-      ? awaitingTextResponse
-      : userData[userId].awaitingTextResponse;
-  userData[userId].awaitingArtworkSelection =
-    awaitingArtworkSelection !== undefined
-      ? awaitingArtworkSelection
-      : userData[userId].awaitingArtworkSelection;
-  userData[userId].keyword = keyword || userData[userId].keyword;
-  userData[userId].lastImgUrl = lastImgUrl || userData[userId].lastImgUrl;
-  userData[userId].lastImgCreator =
-    lastImgCreator || userData[userId].lastImgCreator;
-  userData[userId].lastImgTitle = lastImgTitle || userData[userId].lastImgTitle;
-  userData[userId].artworkUrl = artworkUrl || userData[userId].artworkUrl;
-  userData[userId].textResponse = textResponse || userData[userId].textResponse;
-  userData[userId].lastUser = lastUser || userData[userId].lastUser;
-
-  return userData[userId];
-}
-
 // get json result
 // use xmlhttp only to get result at the very beginning (good for the random function). use axios for async
 var xmlhttp = new XMLHttpRequest();
@@ -165,7 +115,6 @@ const writeToAPI = async (slackbotId, data) => {
     var resp = await axios.post(gameUrl, req);
 
     console.log("POST data to API");
-    console.log(req);
   } catch (error) {
     console.log(error);
   }
@@ -285,15 +234,6 @@ function getNextRndInteger(src, min, max) {
   return out;
 }
 
-// Just an state test
-app.message("seestate", async ({ message, say }) => {
-  console.info("##########STATE##########");
-  console.info("channelId: " + postChannelId);
-  console.info("promptIndex: " + promptIndex);
-  console.info(userData);
-  console.info("#########################");
-});
-
 //-----------------end-------------------------------------------
 // Listens to incoming messages that contain "random"
 app.message("random", ({ message, say }) => {
@@ -356,8 +296,6 @@ async function getAllUsersInDefaultChannel(teamId) {
   } catch (error) {
     console.error(error);
   }
-
-  console.log(`Getting users for channel: ${team.channelId}`, users);
 
   // making sure only real users are included
   for (var i = users.length - 1; i >= 0; i--) {
@@ -634,8 +572,6 @@ async function promptSchedule(
 
   clearInterval(scheduledPromptInterval);
   clearTimeout(scheduledPromptTimeout);
-  // clean up user inputs
-  userData = {};
 
   console.log(
     `Set daily prompt time at ${inputHour} hours, ${inputMinute} minutes`
@@ -687,12 +623,6 @@ app.command(
 
     var inputHour = parseFloat(input[0]);
     var inputMinute = parseFloat(input[1]);
-    
-    // take prompt index as optional 3rd argument
-    // if (input.length > 2) {
-    //   promptIndex = parseInt(input[2]);
-    //   console.log(`SETTING PROMPT ${promptIndex}`)
-    // }
 
     // make sure to curb the numbers
     if (inputHour < 0 || inputHour > 24) {
@@ -741,7 +671,7 @@ app.command(
 );
 
 async function exhibitScheduledMessage(teamId, context, delayedMins) {
-  var team = stateGetTeamData(teamId);
+  const team = stateGetTeamData(teamId);
   console.log(">>>> ", teamId);
   // just get delayed reponse
   delayedMins += 0.2; // to safe guard if delayedMins were 0;
@@ -757,13 +687,14 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
   // talking to api
   var slackbotId = `id-${teamId}-${team.channelId}-${scheduledTime}`;
   var data = {
-    user_data: team
+    state: team
   };
 
   await writeToAPI(slackbotId, data);
 
   // update header block
   var headerBlocks = exhibit_header_template.blocks;
+  
   // replace with correct content
   for (var i = 0; i < headerBlocks.length; i++) {
     if (headerBlocks[i].block_id === "header_title") {
@@ -771,8 +702,8 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
     }
     if (headerBlocks[i].block_id === "header_credits") {
       var creditString = "";
-      for (var key in userData) {
-        var thisUser = getUserData(key);
+      for (var key in team.users) {
+        var thisUser = stateGetUserData(teamId, key);
         if (thisUser.textResponse && thisUser.textResponse != "") {
           creditString = creditString.concat(`<@${key}>, `);
         }
@@ -797,6 +728,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
       headerBlocks[i].image_url = prompts.promptArtImageUrl;
       headerBlocks[i].alt_text = prompts.promptArtTitle;
     }
+    // TODO: This pushes everything below fold...figure this out
     // if (userBlocks[i].block_id === "cma_button") {
     //         userBlocks[i].elements[0].url = artworkUrl; //cma website
     //       }
@@ -807,7 +739,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
     // Call the chat.scheduleMessage method with a token
     const result = await app.client.chat.scheduleMessage({
       // The token you used to initialize your app is stored in the `context` object
-      token: context.botToken,
+      token: team.botToken,
       channel: team.channelId, // find channel id or set current channel as post channel
       post_at: scheduledTime,
       blocks: [],
@@ -817,9 +749,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
 
     // for (var key in userData) {
     for (var key in team.users) {
-      var thisUser = team.users[key];
-
-      console.dir(thisUser);
+      var thisUser = stateGetUserData(teamId, key);
 
       if (thisUser.lastImgUrl && thisUser.lastImgTitle) {
         var userId = key;
@@ -829,7 +759,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
           // Call the users.info method using the built-in WebClient
           const result = await app.client.users.info({
             // The token you used to initialize your app is stored in the `context` object
-            token: context.botToken,
+            token: team.botToken,
             // Call users.info for the user that joined the workspace
             user: userId
           });
@@ -863,7 +793,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
         }
         const result = await app.client.chat.scheduleMessage({
           // The token you used to initialize your app is stored in the `context` object
-          token: context.botToken,
+          token: team.botToken,
           text: " ",
           channel: team.channelId, // find channel id or set current channel as post channel
           post_at: scheduledTime + 2, // delay so the prompt comes first
@@ -887,20 +817,20 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
     // Call the chat.scheduleMessage method with a token
     const endResult = await app.client.chat.scheduleMessage({
       // The token you used to initialize your app is stored in the `context` object
-      token: context.botToken,
+      token: team.botToken,
       channel: team.channelId, // find channel id or set current channel as post channel
       post_at: scheduledTime + 5, // delayed more for the ending message
       blocks: [],
       attachments: [{ blocks: footerBlocks }],
       text: " "
     });
+    
+    // Only clear data on success
+    // TODO: ...do we want to rethink that
+    stateClearUserData(teamId);    
   } catch (error) {
     console.error(error);
   }
-
-  // clear input no matter what
-  userData = {};
-  stateClearUserData(teamId);
 }
 
 // schedule the exhibit, currently just adding delay, can expand from here
@@ -932,19 +862,7 @@ app.command(
 
 // this is where the prompt message is composed
 async function promptInvoke(channelId, teamId, userId, context) {
-  // save channel id
-  //chatChannelId = channelId; // which could happen in a private channel or group chat
-
-  // TODO: DELETE
-  console.dir(userData);
-  // Does user's record exist in userData yet?
-  if (!(userId in userData)) {
-    userData[userId] = {
-      chatChannelId: channelId,
-      awaitingTextResponse: false,
-      awaitingArtworkSelection: true
-    };
-  }
+  var team = stateGetTeamData(teamId);
   
   console.log(">> invoking prompt with channelId, teamId, userId ", channelId, teamId, userId);
   
@@ -957,7 +875,6 @@ async function promptInvoke(channelId, teamId, userId, context) {
   // variables (to be updated dynamically)
   var prompts = getPrompts();
 
-  console.log(`invoking prompt on ${channelId}`);
   // create a block
   try {
     // update header block
@@ -1009,7 +926,7 @@ async function promptInvoke(channelId, teamId, userId, context) {
     }
 
     const result = await app.client.chat.postMessage({
-      token: context.botToken,
+      token: team.botToken,
       // Channel to send message to
       channel: channelId,
       // Main art selection interaction
@@ -1104,20 +1021,6 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
 
   //          userId,chatChannelId,awaitingTextResponse,awaitingArtworkSelection, keyword, lastImgUrl,lastImgCreator,lastImgTitle,artworkUrl,textResponse
   var creators = formatCreators(featured.creators);
-
-  // TODO: DELETE
-  getUserData(
-    userId, // uesr id
-    void 0, // chat channel id
-    true, // awaiting text response
-    void 0, // waiting artwork selection
-    void 0, // keyword
-    featured.images.web.url, // last img url
-    creators, // last img creator
-    featured.title, // last imge title
-    featured.url, // artwork url
-    void 0 // text response
-  );
 
   user.awaitingTextResponse = true;
   user.lastImgUrl = featured.images.web.url;
@@ -1290,21 +1193,6 @@ async function wordSelection(word, teamId, userId, botToken) {
   // await to get results
   const artObjects = await getArts(word);
 
-  //TODO: DELETE
-  getUserData(
-    userId, // uesr id
-    void 0, // chat channel id
-    void 0, // awaiting text response
-    void 0, // waiting artwork selection
-    word, // keyword
-    void 0, // last img url
-    void 0, // last img creator
-    void 0, // last imge title
-    void 0, // artwork url
-    void 0, // text response
-    void 0 // last user
-  );
-
   var targetIndex = getRndInteger(0, artObjects.length - 1);
 
   var featured = artObjects[targetIndex];
@@ -1314,21 +1202,6 @@ async function wordSelection(word, teamId, userId, botToken) {
   lastArtIndex = targetIndex;
 
   var creators = formatCreators(featured.creators);
-
-  //TODO: DELETE
-  getUserData(
-    userId, // uesr id
-    void 0, // chat channel id
-    true, // awaiting text response
-    void 0, // waiting artwork selection
-    void 0, // keyword
-    featured.images.web.url, // last img url
-    creators, // last img creator
-    featured.title, // last imge title
-    featured.url, // artwork url
-    "", // text response
-    userId // lastUser
-  );
   
   user.keyword = word;
   user.awaitingTextResponse = true;
@@ -1405,17 +1278,6 @@ app.message("", async ({ message, payload, context, say }) => {
   // cancel
   console.log(`user response: ${rawUserInput}, user id: ${message.user}`);
 
-  // TODO: DELETE
-  // Does user's record exist in userData yet?
-  // if (!(userId in userData)) {
-  //   userData[userId] = {
-  //     awaitingTextResponse: false,
-  //     awaitingArtworkSelection: true
-  //   };
-  // }
-  // this will create new key if needed
-  getUserData(userId);
-
   if (escapedInput == "random") {
     return;
   }
@@ -1426,8 +1288,6 @@ app.message("", async ({ message, payload, context, say }) => {
 
   // TODO: fix cancel
   if (escapedInput == "cancel") {
-    delete userData[userId];
-    
     stateDeleteUserData(teamId, userId);
 
     say(`Your selection have been canceled.`);
@@ -1441,21 +1301,6 @@ app.message("", async ({ message, payload, context, say }) => {
       `>:speech_balloon: Got it, <@${message.user}>! _${
         user.lastImgTitle
       }_ and your comment will be featured in today's exhibit.`
-    );
-
-    //adding state
-    getUserData(
-      userId, // uesr id
-      void 0, // chat channel id
-      false, // awaiting text response
-      false, // waiting artwork selection
-      void 0, // keyword
-      void 0, // last img url
-      void 0, // last img creator
-      void 0, // last imge title
-      void 0, // artwork url
-      rawUserInput, // text response
-      void 0 // last user
     );
     
     user.awaitingTextResponse = false;
@@ -1489,23 +1334,6 @@ app.message("", async ({ message, payload, context, say }) => {
     );
     // await to get results
     const artObjects = await getArts(escapedInput);
-    
-    //TODO: DELETE
-
-    //userData[userId].keyword = escapedInput;
-    getUserData(
-      userId, // uesr id
-      void 0, // chat channel id
-      void 0, // awaiting text response
-      void 0, // waiting artwork selection
-      escapedInput, // keyword
-      void 0, // last img url
-      void 0, // last img creator
-      void 0, // last imge title
-      void 0, // artwork url
-      void 0, // text response
-      void 0 // last user
-    );
 
     var targetIndex = getRndInteger(0, artObjects.length - 1);
 
@@ -1516,20 +1344,6 @@ app.message("", async ({ message, payload, context, say }) => {
     lastArtIndex = targetIndex;
 
     var creators = formatCreators(featured.creators);
-
-    getUserData(
-      userId, // uesr id
-      void 0, // chat channel id
-      true, // awaiting text response
-      void 0, // waiting artwork selection
-      void 0, // keyword
-      featured.images.web.url, // last img url
-      creators, // last img creator
-      featured.title, // last imge title
-      featured.url, // artwork url
-      "", // text response
-      message.user // lastUser
-    );
     
     user.awaitingTextResponse = true;
     user.keyword = escapedInput;
@@ -1586,8 +1400,6 @@ app.message("", async ({ message, payload, context, say }) => {
 app.message("cancel", async ({ message, say }) => {
   var userId = message.user;
   var teamId = message.team;
-  
-  delete userData[userId];
   
   stateDeleteUserData(teamId, userId);
 
@@ -1746,7 +1558,8 @@ app.action("prompt_time_selection", async ({ ack, payload, body, context }) => {
   
   for (const team of teams) {
     stateData[team] = {
-      channelId: process.env["SLACK_BOT_CHANNEL_ID_"+team],
+      channelId: process.env[`SLACK_BOT_CHANNEL_ID_${team}`],
+      botToken: process.env[`SLACK_BOT_TOKEN_${team}`],
       users: {}
     };
   }
