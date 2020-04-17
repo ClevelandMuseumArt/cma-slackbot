@@ -18,8 +18,14 @@ var prompt_invoke_template = require("./prompt_invoke_template_multi.json");
 var prompt_selection_template = require("./prompt_selection_template.json");
 var confirm_image_template = require("./confirm_image_template.json");
 
-// content
-var prompts = require("./prompts.json");
+// Populate prompts content
+var prompts = [];
+const promptsUrl = "https://www.clevelandart.org/slackbot/prompts";
+async function getAllPrompts() {
+  var result = await axios.get(promptsUrl);
+  prompts = result.data;
+}
+getAllPrompts();
 
 dotenv.config();
 
@@ -46,7 +52,7 @@ var scheduledPromptTimeout; // setTimrout
 
 var lastArtIndex = 0;
 var postChannelId = "";
-var promptIndex = 1;
+var promptIndex = 0;
 
 // EVERYTHING (REGARDING STATE) GOES IN HERE
 var stateData = {
@@ -175,14 +181,21 @@ const getArts = async keyword => {
   var prompt = getPrompts();
   
   var parsedKeyword = keyword.replace(/:/g, "");
-  
-  if (prompt.substitutions && prompt.substitutions[parsedKeyword]) {
-    parsedKeyword = prompt.substitutions[parsedKeyword];
-  }
-  
-  var query = prompt.queryPattern.replace(/__keyword__/g, parsedKeyword);
 
-  console.log(query);
+  // Default query, for choices that don't specify their own query
+  var query = prompt.defaultQueryPattern.replace(/__keyword__/g, parsedKeyword);
+  
+  // Custom per-choice queries
+  for (i=0; i<prompt.choices.length; i++) {
+    console.log(prompt.choices[i]);
+    if (prompt.choices[i].text == keyword) {
+      if (prompt.choices[i].query) {
+        query = prompt.choices[i].query.replace(/__keyword__/g, parsedKeyword);
+      }
+    }
+  }
+
+  console.log('QUERY: ', query);
   
   var artworks = [];
 
@@ -199,15 +212,15 @@ const getArts = async keyword => {
       results = await axios.get(url);
     }
 
-    if (results.data.info.total == 0) {
-      query = prompt.defaultQuery;
+//     if (results.data.info.total == 0) {
+//       query = prompt.defaultQuery;
 
-      url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
-      console.log(
-        "STILL NO RESULTS, using default query, getting from: " + url
-      );
-      results = await axios.get(url);
-    }
+//       url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
+//       console.log(
+//         "STILL NO RESULTS, using default query, getting from: " + url
+//       );
+//       results = await axios.get(url);
+//     }
 
     artworks = results.data.data;
     
@@ -805,9 +818,9 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
       headerBlocks[i].text.text = prompts.resultPrompt;
     }
     if (headerBlocks[i].block_id === "header_image") {
-      // headerBlocks[i].title.text = prompts.resultPromptTitle;
-      headerBlocks[i].image_url = prompts.resultPromptImageUrl;
-      headerBlocks[i].alt_text = prompts.resultPromptTitle;
+      // headerBlocks[i].title.text = prompts.promptArtTitle;
+      headerBlocks[i].image_url = prompts.promptArtImageUrl;
+      headerBlocks[i].alt_text = prompts.promptArtTitle;
     }
     // if (userBlocks[i].block_id === "cma_button") {
     //         userBlocks[i].elements[0].url = artworkUrl; //cma website
@@ -975,19 +988,19 @@ async function promptInvoke(channelId, teamId, userId, context) {
     // update header block
     var promptInvokeBlocks = prompt_invoke_template.blocks;
     
-    // create buttons from choiceWords, for max of 5 (only 5 button action_ids)
+    // create buttons from choices, for max of 5 (only 5 button action_ids)
     var btns = [];
-    var btnNum = (prompts.choiceWords.length <= 5 ? prompts.choiceWords.length : 5);
+    var btnNum = (prompts.choices.length <= 5 ? prompts.choices.length : 5);
     
     for (var i = 0; i < btnNum; i++) {
       var btn = {
 					"type": "button",
 					"text": {
 						"type": "plain_text",
-						"text": prompts.choiceWords[i],
+						"text": prompts.choices[i].text,
 						"emoji": true
 					},
-					"value": prompts.choiceWords[i],
+					"value": prompts.choices[i].text,
           "action_id": "choice_button_" + i
 				};
       
