@@ -51,7 +51,6 @@ var scheduledExhibitTimeout; // setTimeout
 var scheduledPromptTimeout; // setTimrout
 
 var lastArtIndex = 0;
-var postChannelId = "";
 var promptIndex = 0;
 
 // EVERYTHING (REGARDING STATE) GOES IN HERE
@@ -339,50 +338,26 @@ app.message("random", ({ message, say }) => {
   });
 });
 
-//----------------------------------------
-// save current channel as default post channel
-app.command(
-  "/cma_default_channel",
-  async ({ ack, payload, context, say, command }) => {
-    // Acknowledge the command request
-    ack();
-
-    //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
-
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
-
-    // list all users
-    getAllUsersInChannel(context, payload.channel_id);
-
-    // print current channel id
-    console.log("current channel: " + payload.channel_id);
-
-    // save channel id for the exhibit
-    postChannelId = payload.channel_id;
-  }
-);
-
-// returns list of users in a channel
-async function getAllUsersInChannel(context, channelId) {
-  var users;
+// returns list of users in a team's default channel
+async function getAllUsersInDefaultChannel(teamId) {
+  var users = [];
+  var team = stateGetTeamData(teamId);
+  var botToken = process.env[`SLACK_BOT_TOKEN_${teamId}`];
+  
   // get user list in channel
   try {
     // Call the conversations.members method using the built-in WebClient
     const result = await app.client.conversations.members({
       // The token you used to initialize your app is stored in the `context` object
-      token: context.botToken,
-      channel: channelId
+      token: botToken,
+      channel: team.channelId
     });
     users = result.members;
   } catch (error) {
     console.error(error);
   }
 
-  console.log(`Getting users for channel: ${channelId}`, users);
+  console.log(`Getting users for channel: ${team.channelId}`, users);
 
   // making sure only real users are included
   for (var i = users.length - 1; i >= 0; i--) {
@@ -391,7 +366,7 @@ async function getAllUsersInChannel(context, channelId) {
       // Call the users.info method using the built-in WebClient
       const result = await app.client.users.info({
         // The token you used to initialize your app is stored in the `context` object
-        token: context.botToken,
+        token: botToken,
         // Call users.info for the user that joined the workspace
         user: users[i]
       });
@@ -544,7 +519,7 @@ async function triggerFirstPrompt(channel_id, context) {
     var team = stateGetTeamData(teamId);
     
     // we have the option to just loop through users who participated
-    var users = await getAllUsersInChannel(context, team.channelId);
+    var users = await getAllUsersInDefaultChannel(teamId);
     
     for (const user of users) {
       // post message
@@ -571,7 +546,7 @@ async function dailyPromptTask(channel_id, context) {
     var team = stateGetTeamData(teamId);
     
     // we have the option to just loop through users who participated
-    var users = await getAllUsersInChannel(context, team.channelId);
+    var users = await getAllUsersInDefaultChannel(teamId);
     
     for (const user of users) {
       // post message
@@ -1052,16 +1027,8 @@ app.command("/cma_test", async ({ ack, payload, context, command }) => {
   // Acknowledge the command request
   ack();
 
-  console.log("stateData");
-  console.log(JSON.stringify(stateData, undefined, 2));
-//   console.log("payload....");
-//   console.log(payload);
-
-//   console.log("context....");
-//   console.log(context);
-  
-//   console.log("env....");
-//   console.log(process.env);
+  console.log("users in default channel = ", getAllUsersInDefaultChannel(payload.team_id));
+  console.log("stateData = ", JSON.stringify(stateData, undefined, 2));
 });
 
 // invoke cma prompt for demo
@@ -1432,24 +1399,8 @@ app.message("", async ({ message, payload, context, say }) => {
   );
   console.log(`escaped user input: ${escapedInput}`);
 
-  // TODO DELETE
-  // before anything is setup a default channel should be in place
-  // if (postChannelId == "") {
-  //   await say(
-  //     "Hi! You don't have a default channel setup yet, use `/cma_default_channel`.  "
-  //   );
-  //   return;
-  // }
-
   // check if user is admin
   var isAdmin = await getIfAdmin(userId, context);
-
-  // TODO: don't know what this is for -EH
-  // console.dir(payload);
-  // if (!isAdmin && payload.channel == postChannelId) {
-  //   await say("Hi! Only admin can do this");
-  //   return;
-  // }
 
   // cancel
   console.log(`user response: ${rawUserInput}, user id: ${message.user}`);
@@ -1641,32 +1592,6 @@ app.message("cancel", async ({ message, say }) => {
   stateDeleteUserData(teamId, userId);
 
   await say(`Your selection have been canceled.`);
-});
-
-// scheduling test
-// note: uses Unix Epoch time
-app.message("wake me up", async ({ message, context, say }) => {
-  const secondsSinceEpoch = Date.now() / 1000;
-  var scheduledTime = secondsSinceEpoch + 10; // 10 sec from now
-  
-  if (postChannelId != "") {
-    try {
-      // Call the chat.scheduleMessage method with a token
-      const result = await app.client.chat.scheduleMessage({
-        // The token you used to initialize your app is stored in the `context` object
-        token: context.botToken,
-        channel: postChannelId, // find channel id or set current channel as post channel
-        post_at: scheduledTime,
-        text: `But the system has identified <@${message.user}> is not even asleep atm.`
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  } else {
-    await say(
-      "Hi! You don't have a default channel setup yet, use `/cma_default_channel`.  "
-    );
-  }
 });
 
 // function to get if admin
