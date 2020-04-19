@@ -51,7 +51,15 @@ var scheduledExhibitTimeout; // setTimeout
 var scheduledPromptTimeout; // setTimrout
 
 var lastArtIndex = 0;
-var promptIndex = 0;
+var promptIndex = 1;
+var arrayOfObjects;
+
+const gameUrl = "https://openaccess-api.clevelandart.org/api/slackbot/";
+const openaccessUrl = "https://openaccess-api.clevelandart.org/api/artworks/";
+
+/*
+ * FUNCTIONS
+ */
 
 // EVERYTHING (REGARDING STATE) GOES IN HERE
 var stateData = {
@@ -93,8 +101,7 @@ var xmlhttp = new XMLHttpRequest();
 const testUrl =
   "https://openaccess-api.clevelandart.org/api/artworks/?has_image=1&limit=100";
 
-const gameUrl = "https://openaccess-api.clevelandart.org/api/slackbot/";
-const openaccessUrl = "https://openaccess-api.clevelandart.org/api/artworks/";
+
 
 xmlhttp.onreadystatechange = function() {
   if (this.readyState == 4 && this.status == 200) {
@@ -201,8 +208,6 @@ const formatCreators = creators => {
   return s;
 };
 
-var arrayOfObjects;
-
 function getTestData(arr) {
   arrayOfObjects = arr.data;
 }
@@ -233,50 +238,6 @@ function getNextRndInteger(src, min, max) {
   }
   return out;
 }
-
-//-----------------end-------------------------------------------
-// Listens to incoming messages that contain "random"
-app.message("random", ({ message, say }) => {
-  var item = getRandomItem();
-  say({
-    blocks: [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "We picked a random art for you: \n" + "*" + item.title + "*"
-        }
-      },
-      {
-        type: "image",
-        // title: {
-        //   type: "plain_text",
-        //   text: "title" + item.title, // title on top of the image
-        //   emoji: true
-        // },
-        image_url: item.images.web.url,
-        alt_text: "alt" + item.title // title when zoomed
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "Take me to that art on CMA's website! "
-        },
-        accessory: {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: "Visit Artwork",
-            emoji: true
-          },
-          url: item.url,
-          action_id: "visit_button"
-        }
-      }
-    ]
-  });
-});
 
 // returns list of users in a team's default channel
 async function getAllUsersInDefaultChannel(teamId) {
@@ -494,43 +455,6 @@ async function dailyPromptTask(channel_id, context) {
   }
 }
 
-// schedule the exhibit daily hour
-// Listen for a slash command invocation
-app.command(
-  "/cma_daily_exhibit_time",
-  async ({ ack, payload, context, say, command }) => {
-    var userId = payload.user_id;
-    var teamId = payload.team_id;
-
-    
-    // Acknowledge the command request
-    ack();
-
-    clearInterval(scheduledExhibitInterval);
-    clearTimeout(scheduledExhibitTimeout);
-
-    //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
-
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
-
-    var input = command.text.split(":");
-    var inputHour = parseFloat(input[0]);
-    var inputMinute = parseFloat(input[1]);
-
-    // make sure to curb the numbers
-    if (inputHour < 0 || inputHour > 24) {
-      await say(`Please try again with a number between 0 and 24.`);
-      return;
-    }
-
-    await exhibitSchedule(context, say, userId, inputHour, inputMinute);
-  }
-);
-
 // to reuse by command or app_home
 //TODO: DO WE NEED 'say'?
 async function exhibitSchedule(context, say, userId, inputHour, inputMinute) {
@@ -595,84 +519,9 @@ async function promptSchedule(
   }, timeDifference); // pass context to async function
 }
 
-// schedule the prompt daily hour
-// Listen for a slash command invocation
-app.command(
-  "/cma_daily_prompt_time",
-  async ({ ack, payload, context, say, command }) => {
-    var teamId = payload.team_id;
-    var userId = payload.user_id;
-    
-    console.log(">>>>>> ", teamId);
-    console.log(payload);
-
-    var team = stateGetTeamData(teamId);
-    
-    // Acknowledge the command request
-    ack();
-
-    //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
-
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
-
-    var input = command.text.split(":");
-
-    var inputHour = parseFloat(input[0]);
-    var inputMinute = parseFloat(input[1]);
-
-    // make sure to curb the numbers
-    if (inputHour < 0 || inputHour > 24) {
-      await say(`Please try again with a number between 0 and 24.`);
-      return;
-    }
-
-    await promptSchedule(
-      context,
-      say,
-      team.channelId,
-      userId,
-      inputHour,
-      inputMinute
-    );
-  }
-);
-
-// schedule the exhibit daily hour
-// Listen for a slash command invocation
-app.command(
-  "/cma_cancel_exhibits",
-  async ({ ack, payload, context, say, command }) => {
-    // Acknowledge the command request
-    ack();
-
-    //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
-
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
-
-    try {
-      await say(`Daily exhibit and prompt schedule have been canceled.`);
-      // clear the interval
-      clearInterval(scheduledExhibitInterval);
-      clearInterval(scheduledPromptInterval);
-      clearTimeout(scheduledExhibitTimeout);
-      clearTimeout(scheduledPromptTimeout);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-);
-
 async function exhibitScheduledMessage(teamId, context, delayedMins) {
   const team = stateGetTeamData(teamId);
-  console.log(">>>> ", teamId);
+
   // just get delayed reponse
   delayedMins += 0.2; // to safe guard if delayedMins were 0;
   const secondsSinceEpoch = Date.now() / 1000;
@@ -747,7 +596,6 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
       text: " "
     });
 
-    // for (var key in userData) {
     for (var key in team.users) {
       var thisUser = stateGetUserData(teamId, key);
 
@@ -833,33 +681,6 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
   }
 }
 
-// schedule the exhibit, currently just adding delay, can expand from here
-// Listen for a slash command invocation
-app.command(
-  "/cma_schedule_exhibit",
-  async ({ ack, payload, context, say, command }) => {
-    var teamId = payload.team_id;
-    
-    // Acknowledge the command request
-    ack();
-
-    //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
-
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
-
-    // schedule for a specific date
-    // var future = new Date(2010, 6, 26).getTime() / 1000
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date
-
-    var delayedMins = command.text ? parseFloat(command.text) : 0.2;
-    await exhibitScheduledMessage(teamId, context, delayedMins);
-  }
-);
-
 // this is where the prompt message is composed
 async function promptInvoke(channelId, teamId, userId, context) {
   var team = stateGetTeamData(teamId);
@@ -899,7 +720,6 @@ async function promptInvoke(channelId, teamId, userId, context) {
         btns.push(btn);
       }
     
-    
     // replace with correct content
     for (var i = 0; i < promptInvokeBlocks.length; i++) {
       if (promptInvokeBlocks[i].block_id === "prompt_intro") {
@@ -909,7 +729,6 @@ async function promptInvoke(channelId, teamId, userId, context) {
         promptInvokeBlocks[i].text.text =
           ":speech_balloon: " + "*" + prompts.title + "*";
       }
-
       if (promptInvokeBlocks[i].block_id === "prompt_image") {
         // promptInvokeBlocks[i].title.text = prompts.promptArtTitle;
         promptInvokeBlocks[i].image_url = prompts.promptArtImageUrl;
@@ -940,11 +759,281 @@ async function promptInvoke(channelId, teamId, userId, context) {
   }
 }
 
+async function wordSelection(word, teamId, userId, botToken) {
+  const user = stateGetUserData(teamId, userId);
+  var wordIntro = `> <https://www.clevelandart.org/art/collection/search?search=${word}|${word}>`;  
+  
+  const intro = await app.client.chat.postMessage({
+      token: botToken,
+      // Channel to send message to
+      // channel: getUserData(userId).chatChannelId,
+      channel: user.chatChannelId,
+      // Main art selection interaction
+      blocks: [
+        {
+          "block_id": "prompt_intro",
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": wordIntro
+          }
+        }        
+      ],
+      // Text in the notification
+      text: " "
+    });  
+  // await to get results
+  const artObjects = await getArts(word);
+
+  var targetIndex = getRndInteger(0, artObjects.length - 1);
+
+  var featured = artObjects[targetIndex];
+
+  // store info and status
+  console.log("getting the art index of: " + targetIndex);
+  lastArtIndex = targetIndex;
+
+  var creators = formatCreators(featured.creators);
+  
+  user.keyword = word;
+  user.awaitingTextResponse = true;
+  user.lastImgUrl = featured.images.web.url;
+  user.lastImgCreator = creators;
+  user.lastImgTitle = featured.title;
+  user.artworkUrl = featured.url;
+  user.textResponse = "";
+  
+  stateSetUserData(teamId, userId, user);
+
+  // update selection block
+  var promptSelectionBlocks = prompt_selection_template.blocks;
+  var composedImageText = "";
+  if (
+    user.lastImgCreator &&
+    user.lastImgCreator != ""
+  ) {
+    composedImageText =
+      user.lastImgTitle +
+      " by " +
+      user.lastImgCreator;
+  } else {
+    composedImageText = user.lastImgTitle;
+  }
+  // replace with correct content
+  for (var i = 0; i < promptSelectionBlocks.length; i++) {
+    if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
+      // promptSelectionBlocks[i].title.text = composedImageText;
+      promptSelectionBlocks[i].image_url = user.lastImgUrl;
+      promptSelectionBlocks[i].alt_text = composedImageText;
+    }
+    
+    if (promptSelectionBlocks[i].block_id === "cma_button") {
+      promptSelectionBlocks[i].elements[0].url = user.artworkUrl;      
+    }
+  }
+
+  // create a block
+  try {
+    const result = await app.client.chat.postMessage({
+      token: botToken,
+      // Channel to send message to
+      channel: user.chatChannelId,
+      // Main art selection interaction
+      blocks: [],
+      attachments: [{ blocks: promptSelectionBlocks }],
+      // Text in the notification
+      text: " "
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// function to get if admin
+// requires user:read
+async function getIfAdmin(userId, context) {
+  var isAdmin = false;
+  // check if this user is admin
+  try {
+    // Call the users.info method using the built-in WebClient
+    const result = await app.client.users.info({
+      // The token you used to initialize your app is stored in the `context` object
+      token: context.botToken,
+      // Call users.info for the user that joined the workspace
+      user: userId
+    });
+
+    isAdmin = result.user.is_admin;
+    console.log(`${userId} is admin : ${isAdmin}`);
+  } catch (error) {
+    console.error(error);
+  }
+
+  return isAdmin;
+}
+
+/*
+ * MESSAGE HANDLERS
+ */
+
+
+// Record after asking for response
+app.message("", async ({ message, payload, context, say }) => {
+  var userId = payload.user;
+  var teamId = payload.team;
+  
+  var user = stateGetUserData(teamId, userId);
+  
+  // verbose for testing
+  var rawUserInput = message.text;
+  var escapedInput = rawUserInput.replace(
+    /[\`\#\;\%\$\@\!\*\+\-\=\<\>\&\|\(\)\[\]\{\}\^\~\?\:\\/"]/g,
+    ""
+  );
+  console.log(`escaped user input: ${escapedInput}`);
+
+  // check if user is admin
+  var isAdmin = await getIfAdmin(userId, context);
+
+  // cancel
+  console.log(`user response: ${rawUserInput}, user id: ${message.user}`);
+
+  if (escapedInput == "random") {
+    return;
+  }
+
+  if (escapedInput == "seestate") {
+    return;
+  }
+
+  // TODO: fix cancel
+  if (escapedInput == "cancel") {
+    stateDeleteUserData(teamId, userId);
+
+    say(`Your selection have been canceled.`);
+    return;
+  }
+
+  // wait for artwork comment
+  if (user.awaitingTextResponse) {
+    console.log("record user input from: " + message.user);
+    await say(
+      `>:speech_balloon: Got it, <@${message.user}>! _${
+        user.lastImgTitle
+      }_ and your comment will be featured in today's exhibit.`
+    );
+    
+    user.awaitingTextResponse = false;
+    user.awaitingArtworkSelection = false;
+    user.textResponse = rawUserInput;
+
+    stateSetUserData(teamId, userId, user);
+    
+    // all responses were collected, scheduling message
+    const secondsSinceEpoch = Date.now() / 1000;
+    var scheduledTime = secondsSinceEpoch + 15; // 10 sec from now
+
+    return;
+  } else {
+    // REMOVE textResponse = "";
+  }
+
+  
+  //TODO: DO WE NEED THIS?
+  // for artwork selection
+  if (user.awaitingArtworkSelection) {
+    // key confirmation, also links to a search on cma's website
+    await say(
+      "> " +
+        "<" +
+        "https://www.clevelandart.org/art/collection/search?search=" +
+        escapedInput +
+        "|" +
+        rawUserInput +
+        ">"
+    );
+    // await to get results
+    const artObjects = await getArts(escapedInput);
+
+    var targetIndex = getRndInteger(0, artObjects.length - 1);
+
+    var featured = artObjects[targetIndex];
+
+    // store info and status
+    console.log("getting the art index of: " + targetIndex);
+    lastArtIndex = targetIndex;
+
+    var creators = formatCreators(featured.creators);
+    
+    user.awaitingTextResponse = true;
+    user.keyword = escapedInput;
+    user.lastImgUrl = featured.images.web.url;
+    user.lastImgCreator = creators;
+    user.lastImgTitle = featured.title;
+    user.artworkUrl = featured.url;
+    user.textResponse = "";
+    
+    stateSetUserData(teamId, userId, user);
+
+    // update selection block
+    var promptSelectionBlocks = prompt_selection_template.blocks;
+    var composedImageText = "";
+    if (
+      user.lastImgCreator &&
+      user.lastImgCreator != ""
+    ) {
+      composedImageText =
+        user.lastImgTitle +
+        " by " +
+        user.lastImgCreator;
+    } else {
+      composedImageText = user.lastImgTitle;
+    }
+    // replace with correct content
+    for (var i = 0; i < promptSelectionBlocks.length; i++) {
+      if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
+        // promptSelectionBlocks[i].title.text = composedImageText;
+        promptSelectionBlocks[i].image_url = user.lastImgUrl;
+        promptSelectionBlocks[i].alt_text = composedImageText;
+      }
+    }
+
+    // create a block
+    try {
+      const result = await app.client.chat.postMessage({
+        token: context.botToken,
+        // Channel to send message to
+        channel: user.chatChannelId,
+        // Main art selection interaction
+        blocks: [],
+        attachments: [{ blocks: promptSelectionBlocks }],
+        // Text in the notification
+        text: " "
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+});
+
+// Cancel everything by responding the actual word
+app.message("cancel", async ({ message, say }) => {
+  var userId = message.user;
+  var teamId = message.team;
+  
+  stateDeleteUserData(teamId, userId);
+
+  await say(`Your selection have been canceled.`);
+});
+
+/*
+ * SLASH COMMANDS
+ */
+
 app.command("/cma_test", async ({ ack, payload, context, command }) => {
   // Acknowledge the command request
   ack();
 
-  console.log("users in default channel = ", getAllUsersInDefaultChannel(payload.team_id));
   console.log("stateData = ", JSON.stringify(stateData, undefined, 2));
 });
 
@@ -956,6 +1045,172 @@ app.command("/cma_invoke", async ({ ack, payload, context, command }) => {
 
   await promptInvoke(payload.channel_id, payload.team_id, payload.user_id, context);
 });
+
+// schedule the prompt daily hour
+// Listen for a slash command invocation
+app.command(
+  "/cma_daily_prompt_time",
+  async ({ ack, payload, context, say, command }) => {
+    var teamId = payload.team_id;
+    var userId = payload.user_id;
+    
+    console.log(">>>>>> ", teamId);
+    console.log(payload);
+
+    var team = stateGetTeamData(teamId);
+    
+    // Acknowledge the command request
+    ack();
+
+    //// check if user is admin
+    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+
+    //     if (!isAdmin){
+    //       await say("Hi! Only admin can do this");
+    //       return;
+    //     }
+
+    var input = command.text.split(":");
+
+    var inputHour = parseFloat(input[0]);
+    var inputMinute = parseFloat(input[1]);
+
+    // make sure to curb the numbers
+    if (inputHour < 0 || inputHour > 24) {
+      await say(`Please try again with a number between 0 and 24.`);
+      return;
+    }
+
+    await promptSchedule(
+      context,
+      say,
+      team.channelId,
+      userId,
+      inputHour,
+      inputMinute
+    );
+  }
+);
+
+// schedule the exhibit daily hour
+// Listen for a slash command invocation
+app.command(
+  "/cma_daily_exhibit_time",
+  async ({ ack, payload, context, say, command }) => {
+    var userId = payload.user_id;
+    var teamId = payload.team_id;
+
+    
+    // Acknowledge the command request
+    ack();
+
+    clearInterval(scheduledExhibitInterval);
+    clearTimeout(scheduledExhibitTimeout);
+
+    //// check if user is admin
+    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+
+    //     if (!isAdmin){
+    //       await say("Hi! Only admin can do this");
+    //       return;
+    //     }
+
+    var input = command.text.split(":");
+    var inputHour = parseFloat(input[0]);
+    var inputMinute = parseFloat(input[1]);
+
+    // make sure to curb the numbers
+    if (inputHour < 0 || inputHour > 24) {
+      await say(`Please try again with a number between 0 and 24.`);
+      return;
+    }
+
+    await exhibitSchedule(context, say, userId, inputHour, inputMinute);
+  }
+);
+
+// schedule the exhibit, currently just adding delay, can expand from here
+// Listen for a slash command invocation
+app.command(
+  "/cma_schedule_exhibit",
+  async ({ ack, payload, context, say, command }) => {
+    var teamId = payload.team_id;
+    
+    // Acknowledge the command request
+    ack();
+
+    //// check if user is admin
+    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+
+    //     if (!isAdmin){
+    //       await say("Hi! Only admin can do this");
+    //       return;
+    //     }
+
+    // schedule for a specific date
+    // var future = new Date(2010, 6, 26).getTime() / 1000
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date
+
+    var delayedMins = command.text ? parseFloat(command.text) : 0.2;
+    await exhibitScheduledMessage(teamId, context, delayedMins);
+  }
+);
+
+// schedule the exhibit daily hour
+// Listen for a slash command invocation
+app.command(
+  "/cma_cancel_exhibits",
+  async ({ ack, payload, context, say, command }) => {
+    // Acknowledge the command request
+    ack();
+
+    //// check if user is admin
+    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+
+    //     if (!isAdmin){
+    //       await say("Hi! Only admin can do this");
+    //       return;
+    //     }
+
+    try {
+      await say(`Daily exhibit and prompt schedule have been canceled.`);
+      // clear the interval
+      clearInterval(scheduledExhibitInterval);
+      clearInterval(scheduledPromptInterval);
+      clearTimeout(scheduledExhibitTimeout);
+      clearTimeout(scheduledPromptTimeout);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+);
+
+
+/*
+ * ACTIONS
+ */
+
+// Listen for a button invocation with action_id `choice_button_[index]`
+// You must set up a Request URL under Interactive Components on your app configuration page
+var numChoices = 5;
+for (var i = 0; i < numChoices; i++) {
+  var actionId = "choice_button_" + i.toString();
+  app.action(actionId, async ({ ack, payload, body, context }) => {
+    var userId = body.user.id;
+    var teamId = body.team.id;
+
+    var user = stateGetUserData(teamId, userId);
+    
+    // Acknowledge the button request
+    ack();
+    
+    // TODO: this is how it should *all* work, does userData content exist, not
+    // in "awaiting*" flags
+    if (!user.keyword) {
+      wordSelection(payload.value , teamId, userId, context.botToken);
+    } 
+  });
+}
 
 // Listen for a button invocation with action_id `visit_button`
 // You must set up a Request URL under Interactive Components on your app configuration page
@@ -1145,347 +1400,6 @@ app.action("confirm_button", async ({ ack, body, context }) => {
   }
 });
 
-// Listen for a button invocation with action_id `choice_button_[index]`
-// You must set up a Request URL under Interactive Components on your app configuration page
-var numChoices = 5;
-for (var i = 0; i < numChoices; i++) {
-  var actionId = "choice_button_" + i.toString();
-  app.action(actionId, async ({ ack, payload, body, context }) => {
-    var userId = body.user.id;
-    var teamId = body.team.id;
-
-    var user = stateGetUserData(teamId, userId);
-    
-    // Acknowledge the button request
-    ack();
-    
-    // TODO: this is how it should *all* work, does userData content exist, not
-    // in "awaiting*" flags
-    if (!user.keyword) {
-      wordSelection(payload.value , teamId, userId, context.botToken);
-    } 
-  });
-}
-
-async function wordSelection(word, teamId, userId, botToken) {
-  const user = stateGetUserData(teamId, userId);
-  var wordIntro = `> <https://www.clevelandart.org/art/collection/search?search=${word}|${word}>`;  
-  
-  const intro = await app.client.chat.postMessage({
-      token: botToken,
-      // Channel to send message to
-      // channel: getUserData(userId).chatChannelId,
-      channel: user.chatChannelId,
-      // Main art selection interaction
-      blocks: [
-        {
-          "block_id": "prompt_intro",
-          "type": "section",
-          "text": {
-            "type": "mrkdwn",
-            "text": wordIntro
-          }
-        }        
-      ],
-      // Text in the notification
-      text: " "
-    });  
-  // await to get results
-  const artObjects = await getArts(word);
-
-  var targetIndex = getRndInteger(0, artObjects.length - 1);
-
-  var featured = artObjects[targetIndex];
-
-  // store info and status
-  console.log("getting the art index of: " + targetIndex);
-  lastArtIndex = targetIndex;
-
-  var creators = formatCreators(featured.creators);
-  
-  user.keyword = word;
-  user.awaitingTextResponse = true;
-  user.lastImgUrl = featured.images.web.url;
-  user.lastImgCreator = creators;
-  user.lastImgTitle = featured.title;
-  user.artworkUrl = featured.url;
-  user.textResponse = "";
-  
-  stateSetUserData(teamId, userId, user);
-
-  // update selection block
-  var promptSelectionBlocks = prompt_selection_template.blocks;
-  var composedImageText = "";
-  if (
-    user.lastImgCreator &&
-    user.lastImgCreator != ""
-  ) {
-    composedImageText =
-      user.lastImgTitle +
-      " by " +
-      user.lastImgCreator;
-  } else {
-    composedImageText = user.lastImgTitle;
-  }
-  // replace with correct content
-  for (var i = 0; i < promptSelectionBlocks.length; i++) {
-    if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
-      // promptSelectionBlocks[i].title.text = composedImageText;
-      promptSelectionBlocks[i].image_url = user.lastImgUrl;
-      promptSelectionBlocks[i].alt_text = composedImageText;
-    }
-    
-    if (promptSelectionBlocks[i].block_id === "cma_button") {
-      promptSelectionBlocks[i].elements[0].url = user.artworkUrl;      
-    }
-  }
-
-  // create a block
-  try {
-    const result = await app.client.chat.postMessage({
-      token: botToken,
-      // Channel to send message to
-      channel: user.chatChannelId,
-      // Main art selection interaction
-      blocks: [],
-      attachments: [{ blocks: promptSelectionBlocks }],
-      // Text in the notification
-      text: " "
-    });
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Record after asking for response
-app.message("", async ({ message, payload, context, say }) => {
-  var userId = payload.user;
-  var teamId = payload.team;
-  
-  var user = stateGetUserData(teamId, userId);
-  
-  // verbose for testing
-  var rawUserInput = message.text;
-  var escapedInput = rawUserInput.replace(
-    /[\`\#\;\%\$\@\!\*\+\-\=\<\>\&\|\(\)\[\]\{\}\^\~\?\:\\/"]/g,
-    ""
-  );
-  console.log(`escaped user input: ${escapedInput}`);
-
-  // check if user is admin
-  var isAdmin = await getIfAdmin(userId, context);
-
-  // cancel
-  console.log(`user response: ${rawUserInput}, user id: ${message.user}`);
-
-  if (escapedInput == "random") {
-    return;
-  }
-
-  if (escapedInput == "seestate") {
-    return;
-  }
-
-  // TODO: fix cancel
-  if (escapedInput == "cancel") {
-    stateDeleteUserData(teamId, userId);
-
-    say(`Your selection have been canceled.`);
-    return;
-  }
-
-  // wait for artwork comment
-  if (user.awaitingTextResponse) {
-    console.log("record user input from: " + message.user);
-    await say(
-      `>:speech_balloon: Got it, <@${message.user}>! _${
-        user.lastImgTitle
-      }_ and your comment will be featured in today's exhibit.`
-    );
-    
-    user.awaitingTextResponse = false;
-    user.awaitingArtworkSelection = false;
-    user.textResponse = rawUserInput;
-
-    stateSetUserData(teamId, userId, user);
-    
-    // all responses were collected, scheduling message
-    const secondsSinceEpoch = Date.now() / 1000;
-    var scheduledTime = secondsSinceEpoch + 15; // 10 sec from now
-
-    return;
-  } else {
-    // REMOVE textResponse = "";
-  }
-
-  
-  //TODO: DO WE NEED THIS?
-  // for artwork selection
-  if (user.awaitingArtworkSelection) {
-    // key confirmation, also links to a search on cma's website
-    await say(
-      "> " +
-        "<" +
-        "https://www.clevelandart.org/art/collection/search?search=" +
-        escapedInput +
-        "|" +
-        rawUserInput +
-        ">"
-    );
-    // await to get results
-    const artObjects = await getArts(escapedInput);
-
-    var targetIndex = getRndInteger(0, artObjects.length - 1);
-
-    var featured = artObjects[targetIndex];
-
-    // store info and status
-    console.log("getting the art index of: " + targetIndex);
-    lastArtIndex = targetIndex;
-
-    var creators = formatCreators(featured.creators);
-    
-    user.awaitingTextResponse = true;
-    user.keyword = escapedInput;
-    user.lastImgUrl = featured.images.web.url;
-    user.lastImgCreator = creators;
-    user.lastImgTitle = featured.title;
-    user.artworkUrl = featured.url;
-    user.textResponse = "";
-    
-    stateSetUserData(teamId, userId, user);
-
-    // update selection block
-    var promptSelectionBlocks = prompt_selection_template.blocks;
-    var composedImageText = "";
-    if (
-      user.lastImgCreator &&
-      user.lastImgCreator != ""
-    ) {
-      composedImageText =
-        user.lastImgTitle +
-        " by " +
-        user.lastImgCreator;
-    } else {
-      composedImageText = user.lastImgTitle;
-    }
-    // replace with correct content
-    for (var i = 0; i < promptSelectionBlocks.length; i++) {
-      if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
-        // promptSelectionBlocks[i].title.text = composedImageText;
-        promptSelectionBlocks[i].image_url = user.lastImgUrl;
-        promptSelectionBlocks[i].alt_text = composedImageText;
-      }
-    }
-
-    // create a block
-    try {
-      const result = await app.client.chat.postMessage({
-        token: context.botToken,
-        // Channel to send message to
-        channel: user.chatChannelId,
-        // Main art selection interaction
-        blocks: [],
-        attachments: [{ blocks: promptSelectionBlocks }],
-        // Text in the notification
-        text: " "
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  }
-});
-
-// Cancel everything by responding the actual word
-app.message("cancel", async ({ message, say }) => {
-  var userId = message.user;
-  var teamId = message.team;
-  
-  stateDeleteUserData(teamId, userId);
-
-  await say(`Your selection have been canceled.`);
-});
-
-// function to get if admin
-// requires user:read
-async function getIfAdmin(userId, context) {
-  var isAdmin = false;
-  // check if this user is admin
-  try {
-    // Call the users.info method using the built-in WebClient
-    const result = await app.client.users.info({
-      // The token you used to initialize your app is stored in the `context` object
-      token: context.botToken,
-      // Call users.info for the user that joined the workspace
-      user: userId
-    });
-
-    isAdmin = result.user.is_admin;
-    console.log(`${userId} is admin : ${isAdmin}`);
-  } catch (error) {
-    console.error(error);
-  }
-
-  return isAdmin;
-}
-
-//onboarding
-app.event("app_home_opened", async ({ event, context }) => {
-  var isUserAdmin = await getIfAdmin(event.user, context);
-
-  try {
-    /* view.publish is the method that your app uses to push a view to the Home tab */
-    const result = await app.client.views.publish({
-      /* retrieves your xoxb token from context */
-      token: context.botToken,
-
-      /* the user that opened your app's app home */
-      user_id: event.user,
-
-      /* the view payload that appears in the app home*/
-      view: {
-        type: "home",
-        callback_id: "home_view",
-
-        /* body of the view */
-        blocks: [
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "*Welcome to ArtLens Slacker* :art:"
-            }
-          }
-        ]
-      }
-    });
-  } catch (error) {
-    console.error(error);
-  }
-
-  //TODO: admin view?
-//   try {
-//     /* view.publish is the method that your app uses to push a view to the Home tab */
-//     const result = await app.client.views.publish({
-//       /* retrieves your xoxb token from context */
-//       token: context.botToken,
-
-//       /* the user that opened your app's app home */
-//       user_id: event.user,
-
-//       /* the view payload that appears in the app home*/
-//       view: {
-//         type: "home",
-//         callback_id: "home_view",
-
-//         /* body of the view */
-//         blocks: home_template.blocks
-//       }
-//     });
-//   } catch (error) {
-//     console.error(error);
-//   }
-});
 
 // Listen for a button invocation with action_id `shuffle_button`
 // You must set up a Request URL under Interactive Components on your app configuration page
@@ -1548,6 +1462,72 @@ app.action("prompt_time_selection", async ({ ack, payload, body, context }) => {
     console.error(error);
   }
 });
+
+/*
+ * HOME SCREEN
+ */
+
+//onboarding
+app.event("app_home_opened", async ({ event, context }) => {
+  var isUserAdmin = await getIfAdmin(event.user, context);
+
+  try {
+    /* view.publish is the method that your app uses to push a view to the Home tab */
+    const result = await app.client.views.publish({
+      /* retrieves your xoxb token from context */
+      token: context.botToken,
+
+      /* the user that opened your app's app home */
+      user_id: event.user,
+
+      /* the view payload that appears in the app home*/
+      view: {
+        type: "home",
+        callback_id: "home_view",
+
+        /* body of the view */
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*Welcome to ArtLens Slacker* :art:"
+            }
+          }
+        ]
+      }
+    });
+  } catch (error) {
+    console.error(error);
+  }
+
+  //TODO: admin view?
+//   try {
+//     /* view.publish is the method that your app uses to push a view to the Home tab */
+//     const result = await app.client.views.publish({
+//       /* retrieves your xoxb token from context */
+//       token: context.botToken,
+
+//       /* the user that opened your app's app home */
+//       user_id: event.user,
+
+//       /* the view payload that appears in the app home*/
+//       view: {
+//         type: "home",
+//         callback_id: "home_view",
+
+//         /* body of the view */
+//         blocks: home_template.blocks
+//       }
+//     });
+//   } catch (error) {
+//     console.error(error);
+//   }
+});
+
+/*
+ * APP STARTUP
+ */
 
 (async () => {
   // Start your app
