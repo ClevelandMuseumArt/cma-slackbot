@@ -3,7 +3,6 @@ dependencies:
   axios: 0.19.2
   dotenv: 8.2.0
   log-timestamp: 0.3.0
-  node-fetch: 2.6.0
   xmlhttprequest: 1.8.0
 packages:
   /@slack/bolt/1.6.0:
@@ -463,12 +462,6 @@ packages:
       node: '>= 0.6'
     resolution:
       integrity: sha512-hZXc7K2e+PgeI1eDBe/10Ard4ekbfrrqG8Ep+8Jmf4JID2bNg7NvCPOZN+kfF574pFQI7mum2AUqDidoKqcTOw==
-  /node-fetch/2.6.0:
-    dev: false
-    engines:
-      node: 4.x || >=6.0.0
-    resolution:
-      integrity: sha512-8dG4H5ujfvFiqDmVu9fQ5bOHUC15JMjMY/Zumv26oOvvVJjM67KF8koCWIabKQ1GJIa9r2mMZscBq/TbdOcmNA==
   /on-finished/2.3.0:
     dependencies:
       ee-first: 1.1.1
@@ -663,5 +656,4 @@ specifiers:
   axios: ^0.19.2
   dotenv: ^8.2.0
   log-timestamp: ^0.3.0
-  node-fetch: ^2.6.0
   xmlhttprequest: ^1.8.0
