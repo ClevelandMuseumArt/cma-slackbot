@@ -1,8 +1,6 @@
 // This the cma slack bot prototype
 // Require the Bolt package (github.com/slackapi/bolt)
 const { App } = require("@slack/bolt");
-var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-const fetch = require("node-fetch");
 const axios = require("axios");
 const dotenv = require("dotenv");
 const logts = require("log-timestamp");
@@ -94,23 +92,6 @@ const stateClearUserData = (teamId) => {
 }
 
 // END STATE FUNCTIONS
-
-// get json result
-// use xmlhttp only to get result at the very beginning (good for the random function). use axios for async
-var xmlhttp = new XMLHttpRequest();
-const testUrl =
-  "https://openaccess-api.clevelandart.org/api/artworks/?has_image=1&limit=100";
-
-
-
-xmlhttp.onreadystatechange = function() {
-  if (this.readyState == 4 && this.status == 200) {
-    var myArr = JSON.parse(this.responseText);
-    getTestData(myArr);
-  }
-};
-xmlhttp.open("GET", testUrl, true);
-xmlhttp.send();
 
 const writeToAPI = async (slackbotId, data) => {
   var req = {
@@ -207,10 +188,6 @@ const formatCreators = creators => {
 
   return s;
 };
-
-function getTestData(arr) {
-  arrayOfObjects = arr.data;
-}
 
 function getItem(id) {
   return arrayOfObjects.find(item => item.id === id).title;
@@ -898,14 +875,6 @@ app.message("", async ({ message, payload, context, say }) => {
   // cancel
   console.log(`user response: ${rawUserInput}, user id: ${message.user}`);
 
-  if (escapedInput == "random") {
-    return;
-  }
-
-  if (escapedInput == "seestate") {
-    return;
-  }
-
   // TODO: fix cancel
   if (escapedInput == "cancel") {
     stateDeleteUserData(teamId, userId);
@@ -1254,22 +1223,6 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   }
 
   var featured = artObjects[targetIndex];
-  //drop while loop
-  var tryCount = 0;
-  while (featured.creators.length <= 0) {
-    tryCount++;
-    if (tryCount >= artObjects.length) {
-      return;
-    }
-
-    if (targetIndex < artObjects.length - 2) {
-      targetIndex++;
-    } else {
-      targetIndex = 0;
-    }
-
-    featured = artObjects[targetIndex];
-  }
 
   console.log("getting the next art index of: " + targetIndex);
   lastArtIndex = targetIndex;
