@@ -71,6 +71,22 @@ const stateGetTeamData = (teamId) => {
     return stateData[teamId];
 };
 
+const hasExhibitParticipants = (teamId) => {
+  const team = stateGetTeamData(teamId);
+  
+  console.log(team);
+  
+  if (team.users) {
+    for (const userId in team.users) {
+      if (team.users[userId].lastImgUrl) {
+        return true;
+      }
+    }
+  }
+  
+  return false
+};
+
 const stateGetUserData = (teamId, userId) => {
     return stateData[teamId].users[userId];  
 };
@@ -281,11 +297,6 @@ function getUserDate(tz_offset) {
   return new Date(withUserOffset * 1000);
 }
 
-async function scheduledPost(context) {
-  // just get delayed reponse
-  await exhibitScheduledMessage(context, 0); // with no additional delay
-}
-
 async function calculateScheduledDate(
   userId,
   context,
@@ -366,13 +377,14 @@ async function calculateScheduledDate(
 async function triggerFirstExhibit(context) {
   console.log("first scheduled exhibit");
   
-  // TODO: DELETE THIS
-  // post message
-  // scheduledPost(context);
   var teamIds = stateGetTeamIds();
   
   for (const teamId of teamIds) {
-    await exhibitScheduledMessage(teamId, context, 0); // with no additional delay
+    if (hasExhibitParticipants(teamId)) {
+      await exhibitScheduledMessage(teamId, context, 0); // with no additional delay
+    } else {
+      console.log("No exhibit participants for team ", teamId);
+    }
   }
   
   // scheduledExhibitInterval = setInterval(function() {
@@ -383,7 +395,6 @@ async function triggerFirstExhibit(context) {
 async function dailyExhibitTask(context) {
   console.log("daily exhibit!");
   // post message
-  scheduledPost(context);
 }
 
 async function triggerFirstPrompt(channel_id, context) {
@@ -650,12 +661,47 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
       text: " "
     });
     
+    //send all users exhibition concluded message
+    sendExhibitionStarted();
+    
     // Only clear data on success
     // TODO: ...do we want to rethink that
     stateClearUserData(teamId);    
   } catch (error) {
     console.error(error);
   }
+}
+
+async function sendExhibitionStarted() {
+  console.log("Exhibition started message");
+
+  var teamIds = stateGetTeamIds();
+  
+  for (const teamId of teamIds) { 
+    var team = stateGetTeamData(teamId);
+    
+    // we have the option to just loop through users who participated
+    var users = await getAllUsersInDefaultChannel(teamId);
+    
+    for (const user of users) {
+      const intro = await app.client.chat.postMessage({
+          token: team.botToken,
+          channel: user.chatChannelId,
+          blocks: [
+            {
+              "block_id": "exhibition_concluded_msg",
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*Today's exhibition has started on the #artlens-slacker channel*"
+              }
+            }        
+          ],
+          // Text in the notification
+          text: "Today's exhibition has started"
+        }); 
+    }
+  }  
 }
 
 // this is where the prompt message is composed
@@ -759,7 +805,7 @@ async function wordSelection(word, teamId, userId, botToken) {
       // Text in the notification
       text: " "
     });  
-  // await to get results
+  // // await to get results
   const artObjects = await getArts(word);
 
   var targetIndex = getRndInteger(0, artObjects.length - 1);
@@ -858,6 +904,8 @@ async function getIfAdmin(userId, context) {
 app.message("", async ({ message, payload, context, say }) => {
   var userId = payload.user;
   var teamId = payload.team;
+  
+  console.log(">>>>> some input by user, team=", userId, teamId);
   
   var user = stateGetUserData(teamId, userId);
   
@@ -1419,6 +1467,7 @@ app.action("prompt_time_selection", async ({ ack, payload, body, context }) => {
 /*
  * HOME SCREEN
  */
+
 
 //onboarding
 app.event("app_home_opened", async ({ event, context }) => {
