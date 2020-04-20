@@ -27,12 +27,30 @@ getAllPrompts();
 
 dotenv.config();
 
-const authorizeFn = async ({teamId}) => {
+const slackBotApiUrl = process.env['SLACK_BOT_API_URL'];
+const openaccessUrl = process.env['OPENACCESS_URL'];
+
+const getTokenData = async (teamId) => {
+  const tokenUrl = `${slackBotApiUrl}tokens/${teamId}`;
+  
+  const results = await axios.get(tokenUrl);
+  
   return {
-    botToken: process.env['SLACK_BOT_TOKEN_'+teamId],
-    botId: process.env['SLACK_BOT_ID_'+teamId],
-    botUserId: process.env['SLACK_BOT_USER_ID_'+teamId]
-  };
+    "botToken": results.data.data.access_token,
+    "botId": results.data.data.bot_id,
+    "botUserId": results.data.data.bot_user_id,
+    "botChannelId": results.data.data.incoming_webhook.channel_id
+  }  
+}
+
+const authorizeFn = async ({teamId}) => {
+  const results = await getTokenData(teamId);
+  
+  return {
+    botToken: results.botToken,
+    botId: results.botId,
+    botUserId: results.botUserId
+  };  
 }
 
 const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET});
@@ -51,9 +69,6 @@ var scheduledPromptTimeout; // setTimrout
 var lastArtIndex = 0;
 var promptIndex = 1;
 var arrayOfObjects;
-
-const gameUrl = "https://openaccess-api.clevelandart.org/api/slackbot/";
-const openaccessUrl = "https://openaccess-api.clevelandart.org/api/artworks/";
 
 /*
  * FUNCTIONS
@@ -116,7 +131,7 @@ const writeToAPI = async (slackbotId, data) => {
   };
 
   try {
-    var resp = await axios.post(gameUrl, req);
+    var resp = await axios.post(slackBotApiUrl, req);
 
     console.log("POST data to API");
   } catch (error) {
@@ -680,13 +695,12 @@ async function sendExhibitionStarted() {
   for (const teamId of teamIds) { 
     var team = stateGetTeamData(teamId);
     
-    // we have the option to just loop through users who participated
-    var users = await getAllUsersInDefaultChannel(teamId);
+    console.log(JSON.stringify(team));
     
-    for (const user of users) {
+    for (const userId in team.users) {
       const intro = await app.client.chat.postMessage({
           token: team.botToken,
-          channel: user.chatChannelId,
+          channel: team.users[userId].chatChannelId,
           blocks: [
             {
               "block_id": "exhibition_concluded_msg",
@@ -1534,7 +1548,7 @@ app.event("app_home_opened", async ({ event, context }) => {
 (async () => {
   // Start your app
   await app.start(process.env.PORT || 3000);
-
+  
   // initialize state
   const teams = stateGetTeamIds();
   
