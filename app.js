@@ -100,7 +100,7 @@ var scheduledExhibitTimeout; // setTimeout
 var scheduledPromptTimeout; // setTimrout
 
 var lastArtIndex = 0;
-var promptIndex = 1;
+var promptIndex = 0;
 var arrayOfObjects;
 
 /*
@@ -285,7 +285,7 @@ function getNextRndInteger(src, min, max) {
 async function getAllUsersInDefaultChannel(teamId) {
   var users = [];
   var team = stateGetTeamData(teamId);
-  var botToken = process.env[`SLACK_BOT_TOKEN_${teamId}`];
+  var botToken = team.botToken;
   
   // get user list in channel
   try {
@@ -456,6 +456,8 @@ async function triggerFirstPrompt(channel_id, context) {
     
     // we have the option to just loop through users who participated
     var users = await getAllUsersInDefaultChannel(teamId);
+    
+    console.log("here? ", users)
     
     for (const user of users) {
       // post message
@@ -713,11 +715,11 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
     });
     
     //send all users exhibition concluded message
-    sendExhibitionStarted();
+    await sendExhibitionStarted();
     
     // Only clear data on success
     // TODO: ...do we want to rethink that
-    stateClearUserData(teamId);    
+    await stateClearUserData(teamId);    
   } catch (error) {
     console.error(error);
   }
@@ -741,13 +743,14 @@ async function sendExhibitionStarted() {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "> :speech_balloon: *Today's exhibition has started on the #artlens-slacker channel*"
+                "text": `> :speech_balloon: *Today's exhibition has started on the ${team.channelName} channel*`
               }
             }        
           ],
           // Text in the notification
           text: "Today's exhibition has started"
         }); 
+      console.log("SEND STARTED TO ", team.users[userId].chatChannelId);
     }
   }  
 }
@@ -761,7 +764,8 @@ async function promptInvoke(channelId, teamId, userId, context) {
   stateSetUserData(teamId, userId, {
       chatChannelId: channelId,
       awaitingTextResponse: false,
-      awaitingArtworkSelection: true
+      awaitingArtworkSelection: true,
+      awaitingQueryText: true
     });
 
   // variables (to be updated dynamically)
@@ -868,6 +872,7 @@ async function wordSelection(word, teamId, userId, botToken) {
   
   user.keyword = word;
   user.awaitingTextResponse = true;
+  user.awaitingQueryText = false;
   user.lastImgUrl = featured.images.web.url;
   user.lastImgCreator = creators;
   user.lastImgTitle = featured.title;
@@ -956,6 +961,11 @@ app.message("", async ({ message, payload, context, say }) => {
   console.log(">>>>> some input by user, team=", userId, teamId);
   
   var user = stateGetUserData(teamId, userId);
+  
+  // don't handle any input if user hasn't hit query button.
+  if (user.awaitingQueryText) {
+    return;
+  }
   
   // verbose for testing
   var rawUserInput = message.text;
@@ -1122,9 +1132,6 @@ app.command(
   async ({ ack, payload, context, say, command }) => {
     var teamId = payload.team_id;
     var userId = payload.user_id;
-    
-    console.log(">>>>>> ", teamId);
-    console.log(payload);
 
     var team = stateGetTeamData(teamId);
     
@@ -1132,12 +1139,12 @@ app.command(
     ack();
 
     //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+    var isAdmin = await getIfAdmin(payload.user_id, context);
 
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
+    if (!isAdmin){
+      await say("Sorry, only an admin can do this");
+      return;
+    }
 
     var input = command.text.split(":");
 
@@ -1168,8 +1175,7 @@ app.command(
   async ({ ack, payload, context, say, command }) => {
     var userId = payload.user_id;
     var teamId = payload.team_id;
-
-    
+ 
     // Acknowledge the command request
     ack();
 
@@ -1177,12 +1183,12 @@ app.command(
     clearTimeout(scheduledExhibitTimeout);
 
     //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+    var isAdmin = await getIfAdmin(payload.user_id, context);
 
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
+    if (!isAdmin){
+      await say("Sorry, only an admin can do this");
+      return;
+    }
 
     var input = command.text.split(":");
     var inputHour = parseFloat(input[0]);
@@ -1209,12 +1215,12 @@ app.command(
     ack();
 
     //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+    var isAdmin = await getIfAdmin(payload.user_id, context);
 
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
+    if (!isAdmin){
+      await say("Sorry, only an admin can do this");
+      return;
+    }
 
     // schedule for a specific date
     // var future = new Date(2010, 6, 26).getTime() / 1000
@@ -1234,12 +1240,12 @@ app.command(
     ack();
 
     //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+    var isAdmin = await getIfAdmin(payload.user_id, context);
 
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
+    if (!isAdmin){
+      await say("Sorry, only an admin can do this");
+      return;
+    }
 
     try {
       await say(`Daily exhibit and prompt schedule have been canceled.`);
