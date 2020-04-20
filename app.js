@@ -100,7 +100,7 @@ var scheduledExhibitTimeout; // setTimeout
 var scheduledPromptTimeout; // setTimrout
 
 var lastArtIndex = 0;
-var promptIndex = 1;
+var promptIndex = 0;
 var arrayOfObjects;
 
 /*
@@ -285,7 +285,7 @@ function getNextRndInteger(src, min, max) {
 async function getAllUsersInDefaultChannel(teamId) {
   var users = [];
   var team = stateGetTeamData(teamId);
-  var botToken = process.env[`SLACK_BOT_TOKEN_${teamId}`];
+  var botToken = team.botToken;
   
   // get user list in channel
   try {
@@ -456,6 +456,8 @@ async function triggerFirstPrompt(channel_id, context) {
     
     // we have the option to just loop through users who participated
     var users = await getAllUsersInDefaultChannel(teamId);
+    
+    console.log("here? ", users)
     
     for (const user of users) {
       // post message
@@ -741,7 +743,7 @@ async function sendExhibitionStarted() {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "> :speech_balloon: *Today's exhibition has started on the #artlens-slacker channel*"
+                "text": `> :speech_balloon: *Today's exhibition has started on the ${team.channelName} channel*`
               }
             }        
           ],
