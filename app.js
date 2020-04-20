@@ -5,7 +5,6 @@ const axios = require("axios");
 const dotenv = require("dotenv");
 const logts = require("log-timestamp");
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-const util = require("./utilities.js");
 
 // block templates
 var exhibit_header_template = require("./exhibit_header_template.json");
@@ -16,15 +15,6 @@ var home_template = require("./app_home_template.json");
 var prompt_invoke_template = require("./prompt_invoke_template_multi.json");
 var prompt_selection_template = require("./prompt_selection_template.json");
 var confirm_image_template = require("./confirm_image_template.json");
-
-// Populate prompts content
-var prompts = [];
-const promptsUrl = "https://www.clevelandart.org/slackbot/prompts";
-async function getAllPrompts() {
-  var result = await axios.get(promptsUrl);
-  prompts = result.data;
-}
-getAllPrompts();
 
 dotenv.config();
 
@@ -100,14 +90,57 @@ var scheduledExhibitTimeout; // setTimeout
 var scheduledPromptTimeout; // setTimrout
 
 var lastArtIndex = 0;
-var promptIndex = 0;
 var arrayOfObjects;
 
 /*
  * FUNCTIONS
  */
 
-// EVERYTHING (REGARDING STATE) GOES IN HERE
+// EVERYTHING REGARDING PROMPT GOES IN HERE
+var promptIndex = 0;
+var promptData = {
+};
+
+// Populate prompts content
+var prompts = [];
+const promptsUrl = process.env["PROMPT_URL"];
+async function getAllPrompts() {
+  var result = await axios.get(promptsUrl);
+  prompts = result.data;
+}
+getAllPrompts();
+
+const initializePromptData = () => {
+  axios.get(promptsUrl)
+    .then((res) => {
+      promptData = {
+        prompt: {},
+        artworks: {}
+      }
+      promptData.prompt = res.data[promptIndex];
+      
+      var query = promptData.prompt.defaultQueryPattern;
+      var thisQuery = "";  
+    
+      for (const choice of promptData.prompt.choices) {
+        if (choice.query) {
+          thisQuery = choice.query;
+        } else {
+          thisQuery = query.replace("__keyword__", choice.text);
+        }
+        
+        axios.get(`${openaccessUrl}?q=${thisQuery}&has_image=1&limit=500`)
+          .then((res) => {
+            promptData.artworks[choice.text] = res.data.data;
+          });
+        
+      } 
+    });
+}
+
+// END PROMPT FUNCTIONS
+
+// EVERYTHING REGARDING STATE GOES IN HERE
 var stateData = {
 };
 
@@ -174,64 +207,68 @@ const writeToAPI = async (slackbotId, data) => {
 };
 
 const getPrompts = () => {
-  return prompts[promptIndex];
+  return promptData.prompt;
 };
 
-const getArts = async keyword => {
-  var limit = 50;
-  var prompt = getPrompts();
+const getArts = (keyword) => {
+  return promptData.artworks[keyword];
+}
+
+// const getArts = async keyword => {
+//   var limit = 50;
+//   var prompt = getPrompts();
   
-  var parsedKeyword = keyword.replace(/:/g, "");
+//   var parsedKeyword = keyword.replace(/:/g, "");
 
-  // Default query, for choices that don't specify their own query
-  var query = prompt.defaultQueryPattern.replace(/__keyword__/g, parsedKeyword);
+//   // Default query, for choices that don't specify their own query
+//   var query = prompt.defaultQueryPattern.replace(/__keyword__/g, parsedKeyword);
   
-  // Custom per-choice queries
-  for (i=0; i<prompt.choices.length; i++) {
-    console.log(prompt.choices[i]);
-    if (prompt.choices[i].text == keyword) {
-      if (prompt.choices[i].query) {
-        query = prompt.choices[i].query.replace(/__keyword__/g, parsedKeyword);
-      }
-    }
-  }
+//   // Custom per-choice queries
+//   for (i=0; i<prompt.choices.length; i++) {
+//     console.log(prompt.choices[i]);
+//     if (prompt.choices[i].text == keyword) {
+//       if (prompt.choices[i].query) {
+//         query = prompt.choices[i].query.replace(/__keyword__/g, parsedKeyword);
+//       }
+//     }
+//   }
 
-  console.log('QUERY: ', query);
+//   console.log('QUERY: ', query);
   
-  var artworks = [];
+//   var artworks = [];
 
-  try {
-    var url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
-    console.log("getting from: " + url);
-    var results = await axios.get(url);
-
-    if (results.data.info.total == 0) {
-      query = parsedKeyword;
-
-      url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
-      console.log("NO RESULTS, using keyword only, getting from: " + url);
-      results = await axios.get(url);
-    }
+//   try {
+//     var url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
+//     console.log("getting from: " + url);
+//     var results = await axios.get(url);
 
 //     if (results.data.info.total == 0) {
-//       query = prompt.defaultQuery;
+//       query = parsedKeyword;
 
 //       url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
-//       console.log(
-//         "STILL NO RESULTS, using default query, getting from: " + url
-//       );
+//       console.log("NO RESULTS, using keyword only, getting from: " + url);
 //       results = await axios.get(url);
 //     }
 
-    artworks = results.data.data;
-    
-    console.log(artworks.length + " RESULTS");
-  } catch (error) {
-    console.log(error);
-  }
+// //     if (results.data.info.total == 0) {
+// //       query = prompt.defaultQuery;
 
-  return artworks;
-};
+// //       url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
+// //       console.log(
+// //         "STILL NO RESULTS, using default query, getting from: " + url
+// //       );
+// //       results = await axios.get(url);
+// //     }
+
+//     artworks = results.data.data;
+    
+//     console.log(artworks.length + " RESULTS");
+//   } catch (error) {
+//     console.log(error);
+//   }
+
+//   return artworks;
+// };
 
 const formatCreators = creators => {
   var s = "";
@@ -256,13 +293,6 @@ const formatCreators = creators => {
 
 function getItem(id) {
   return arrayOfObjects.find(item => item.id === id).title;
-}
-
-function getRandomItem() {
-  var size = arrayOfObjects.length;
-  var index = getRndInteger(0, size - 1);
-  
-  return arrayOfObjects[index];
 }
 
 function getItemByIndex(index) {
@@ -858,8 +888,8 @@ async function wordSelection(word, teamId, userId, botToken) {
       text: " "
     });  
   // // await to get results
-  const artObjects = await getArts(word);
-
+  const artObjects = getArts(word);
+  
   var targetIndex = getRndInteger(0, artObjects.length - 1);
 
   var featured = artObjects[targetIndex];
@@ -1017,6 +1047,9 @@ app.message("", async ({ message, payload, context, say }) => {
   //TODO: DO WE NEED THIS?
   // for artwork selection
   if (user.awaitingArtworkSelection) {
+    console.log("AM I EVEN HITTING THIS?");
+    
+    
     // key confirmation, also links to a search on cma's website
     await say(
       "> " +
@@ -1114,6 +1147,7 @@ app.command("/cma_test", async ({ ack, payload, context, command }) => {
   console.log("isAdmin? ", isAdmin);
   
   console.log("stateData = ", JSON.stringify(stateData, undefined, 2));
+  console.log("promptData = ", JSON.stringify(promptData.prompt, undefined, 2));
 });
 
 // invoke cma prompt for demo
@@ -1315,25 +1349,15 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
     return;
   }
 
-  // only getting 50 results, using processed string
-  // await to get results
   const artObjects = await getArts(user.keyword);
-  //console.dir(artObjects);
 
-  var targetIndex = lastArtIndex;
-
-  if (targetIndex < artObjects.length - 2) {
-    targetIndex++;
-  } else {
-    targetIndex = 0;
-  }
-
+  var targetIndex = getRndInteger(0, artObjects.length - 1);
+  
   var featured = artObjects[targetIndex];
 
   console.log("getting the next art index of: " + targetIndex);
   lastArtIndex = targetIndex;
 
-  //          userId,chatChannelId,awaitingTextResponse,awaitingArtworkSelection, keyword, lastImgUrl,lastImgCreator,lastImgTitle,artworkUrl,textResponse
   var creators = formatCreators(featured.creators);
 
   user.awaitingTextResponse = true;
@@ -1553,6 +1577,23 @@ app.event("app_home_opened", async ({ event, context }) => {
               type: "mrkdwn",
               text: "*Welcome to ArtLens Slacker* :art:"
             }
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "We are excited to share Open Access artwork from the Cleveland Museum of Art’s Collection with you. Our expansive collection contains over 30,000 works of art. Every day you will receive a prompt, and based on your response, we will curate a work of art from CMA’s collection. Once we’ve gathered yours and your co-worker's selections and comments, we’ll host an exhibit for the whole team to see. We’re looking forward to what you’ll share!"
+            }
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "⚡️ *Before you begin, make sure that you add the _ArtLens Slacker_ app to the default channel you selected on install and invite users to join. *"
+            }
           }
         ]
       }
@@ -1595,6 +1636,7 @@ app.event("app_home_opened", async ({ event, context }) => {
   
   // initialize state
   stateData = initializeTeamsFromTokenData();
+  promptData = initializePromptData(); 
   
   console.log("⚡️ Bolt app is running!");
 })();
