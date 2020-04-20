@@ -4,6 +4,7 @@ const { App } = require("@slack/bolt");
 const axios = require("axios");
 const dotenv = require("dotenv");
 const logts = require("log-timestamp");
+var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const util = require("./utilities.js");
 
 // block templates
@@ -29,6 +30,38 @@ dotenv.config();
 
 const slackBotApiUrl = process.env['SLACK_BOT_API_URL'];
 const openaccessUrl = process.env['OPENACCESS_URL'];
+
+// NOT ASYNC!
+const initializeTeamsFromTokenData = () => {
+  const tokenUrl = `${slackBotApiUrl}tokens/`;
+  
+  // const results = await axios.get(tokenUrl);
+  var xmlhttp = new XMLHttpRequest();
+  var results;
+  var data = {};
+  
+  xmlhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      results = JSON.parse(this.responseText);
+      
+      for (const team of results.data) {
+        data[team.team.id] =  {
+          "teamName": team.team.name,
+          "botToken": team.access_token,
+          "botId": team.bot_id,
+          "botUserId": team.bot_user_id,
+          "channelId": team.incoming_webhook.channel_id,
+          "channelName": team.incoming_webhook.channel,
+          "users": {}
+        }  
+      }
+    }
+  };
+  xmlhttp.open("GET", tokenUrl, true);
+  xmlhttp.send();
+  
+  return data;
+}
 
 const getTokenData = async (teamId) => {
   const tokenUrl = `${slackBotApiUrl}tokens/${teamId}`;
@@ -78,8 +111,9 @@ var arrayOfObjects;
 var stateData = {
 };
 
+// TODO: Probably could use a refactor, but keeping it compatible for now
 const stateGetTeamIds = () => {
-  return process.env.SLACK_TEAMS.split("|");
+  return Object.keys(stateData);
 }
 
 const stateGetTeamData = (teamId) => {    
@@ -524,6 +558,8 @@ async function promptSchedule(
 
 async function exhibitScheduledMessage(teamId, context, delayedMins) {
   const team = stateGetTeamData(teamId);
+  
+  console.log("TEAM TO SEND ... ", )
 
   // just get delayed reponse
   delayedMins += 0.2; // to safe guard if delayedMins were 0;
@@ -695,8 +731,6 @@ async function sendExhibitionStarted() {
   for (const teamId of teamIds) { 
     var team = stateGetTeamData(teamId);
     
-    console.log(JSON.stringify(team));
-    
     for (const userId in team.users) {
       const intro = await app.client.chat.postMessage({
           token: team.botToken,
@@ -707,7 +741,7 @@ async function sendExhibitionStarted() {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "*Today's exhibition has started on the #artlens-slacker channel*"
+                "text": "> :speech_balloon: *Today's exhibition has started on the #artlens-slacker channel*"
               }
             }        
           ],
@@ -1064,7 +1098,11 @@ app.message("cancel", async ({ message, say }) => {
 app.command("/cma_test", async ({ ack, payload, context, command }) => {
   // Acknowledge the command request
   ack();
+  
+  const isAdmin = await getIfAdmin(payload.user_id, context);
 
+  console.log("isAdmin? ", isAdmin);
+  
   console.log("stateData = ", JSON.stringify(stateData, undefined, 2));
 });
 
@@ -1550,15 +1588,7 @@ app.event("app_home_opened", async ({ event, context }) => {
   await app.start(process.env.PORT || 3000);
   
   // initialize state
-  const teams = stateGetTeamIds();
-  
-  for (const team of teams) {
-    stateData[team] = {
-      channelId: process.env[`SLACK_BOT_CHANNEL_ID_${team}`],
-      botToken: process.env[`SLACK_BOT_TOKEN_${team}`],
-      users: {}
-    };
-  }
+  stateData = initializeTeamsFromTokenData();
   
   console.log("⚡️ Bolt app is running!");
 })();
