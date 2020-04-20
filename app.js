@@ -1577,6 +1577,23 @@ app.event("app_home_opened", async ({ event, context }) => {
               type: "mrkdwn",
               text: "*Welcome to ArtLens Slacker* :art:"
             }
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "We are excited to share Open Access artwork from the Cleveland Museum of Art’s Collection with you. Our expansive collection contains over 30,000 works of art. Every day you will receive a prompt, and based on your response, we will curate a work of art from CMA’s collection. Once we’ve gathered yours and your co-worker's selections and comments, we’ll host an exhibit for the whole team to see. We’re looking forward to what you’ll share!"
+            }
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "⚡️ *Before you begin, make sure that you add the _ArtLens Slacker_ app to the default channel you selected on install and invite users to join. *"
+            }
           }
         ]
       }
