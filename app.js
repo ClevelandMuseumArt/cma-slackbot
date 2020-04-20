@@ -1132,9 +1132,6 @@ app.command(
   async ({ ack, payload, context, say, command }) => {
     var teamId = payload.team_id;
     var userId = payload.user_id;
-    
-    console.log(">>>>>> ", teamId);
-    console.log(payload);
 
     var team = stateGetTeamData(teamId);
     
@@ -1142,12 +1139,12 @@ app.command(
     ack();
 
     //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+    var isAdmin = await getIfAdmin(payload.user_id, context);
 
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
+    if (!isAdmin){
+      await say("Sorry, only an admin can do this");
+      return;
+    }
 
     var input = command.text.split(":");
 
@@ -1178,8 +1175,7 @@ app.command(
   async ({ ack, payload, context, say, command }) => {
     var userId = payload.user_id;
     var teamId = payload.team_id;
-
-    
+ 
     // Acknowledge the command request
     ack();
 
@@ -1187,12 +1183,12 @@ app.command(
     clearTimeout(scheduledExhibitTimeout);
 
     //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+    var isAdmin = await getIfAdmin(payload.user_id, context);
 
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
+    if (!isAdmin){
+      await say("Sorry, only an admin can do this");
+      return;
+    }
 
     var input = command.text.split(":");
     var inputHour = parseFloat(input[0]);
@@ -1219,12 +1215,12 @@ app.command(
     ack();
 
     //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+    var isAdmin = await getIfAdmin(payload.user_id, context);
 
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
+    if (!isAdmin){
+      await say("Sorry, only an admin can do this");
+      return;
+    }
 
     // schedule for a specific date
     // var future = new Date(2010, 6, 26).getTime() / 1000
@@ -1244,12 +1240,12 @@ app.command(
     ack();
 
     //// check if user is admin
-    //     var isAdmin = await getIfAdmin(payload.user_id, context);
+    var isAdmin = await getIfAdmin(payload.user_id, context);
 
-    //     if (!isAdmin){
-    //       await say("Hi! Only admin can do this");
-    //       return;
-    //     }
+    if (!isAdmin){
+      await say("Sorry, only an admin can do this");
+      return;
+    }
 
     try {
       await say(`Daily exhibit and prompt schedule have been canceled.`);
