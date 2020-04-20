@@ -715,11 +715,11 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
     });
     
     //send all users exhibition concluded message
-    sendExhibitionStarted();
+    await sendExhibitionStarted();
     
     // Only clear data on success
     // TODO: ...do we want to rethink that
-    stateClearUserData(teamId);    
+    await stateClearUserData(teamId);    
   } catch (error) {
     console.error(error);
   }
@@ -750,6 +750,7 @@ async function sendExhibitionStarted() {
           // Text in the notification
           text: "Today's exhibition has started"
         }); 
+      console.log("SEND STARTED TO ", team.users[userId].chatChannelId);
     }
   }  
 }
@@ -763,7 +764,8 @@ async function promptInvoke(channelId, teamId, userId, context) {
   stateSetUserData(teamId, userId, {
       chatChannelId: channelId,
       awaitingTextResponse: false,
-      awaitingArtworkSelection: true
+      awaitingArtworkSelection: true,
+      awaitingQueryText: true
     });
 
   // variables (to be updated dynamically)
@@ -870,6 +872,7 @@ async function wordSelection(word, teamId, userId, botToken) {
   
   user.keyword = word;
   user.awaitingTextResponse = true;
+  user.awaitingQueryText = false;
   user.lastImgUrl = featured.images.web.url;
   user.lastImgCreator = creators;
   user.lastImgTitle = featured.title;
@@ -958,6 +961,11 @@ app.message("", async ({ message, payload, context, say }) => {
   console.log(">>>>> some input by user, team=", userId, teamId);
   
   var user = stateGetUserData(teamId, userId);
+  
+  // don't handle any input if user hasn't hit query button.
+  if (user.awaitingQueryText) {
+    return;
+  }
   
   // verbose for testing
   var rawUserInput = message.text;
