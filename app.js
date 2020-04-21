@@ -35,6 +35,8 @@ const initializeTeamsFromTokenData = () => {
       results = JSON.parse(this.responseText);
       
       for (const team of results.data) {
+        console.log(`Initializing team -> ${team.team.id} - ${team.team.name}`);
+        
         data[team.team.id] =  {
           "teamName": team.team.name,
           "botToken": team.access_token,
@@ -129,7 +131,9 @@ const initializePromptData = () => {
           thisQuery = query.replace("__keyword__", choice.text);
         }
         
-        axios.get(`${openaccessUrl}?q=${thisQuery}&has_image=1&limit=500`)
+        const limitDeptTo = parseInt(process.env['LIMIT_DEPT_TO']);
+        
+        axios.get(`${openaccessUrl}?q=${thisQuery}&has_image=1&limit=500&limit_depts_to=${limitDeptTo}`)
           .then((res) => {
             promptData.artworks[choice.text] = res.data.data;
           });
@@ -957,25 +961,31 @@ async function wordSelection(word, teamId, userId, botToken) {
 
 // function to get if admin
 // requires user:read
+// async function getIfAdmin(userId, context) {
+//   var isAdmin = false;
+//   // check if this user is admin
+//   try {
+//     // Call the users.info method using the built-in WebClient
+//     const result = await app.client.users.info({
+//       // The token you used to initialize your app is stored in the `context` object
+//       token: context.botToken,
+//       // Call users.info for the user that joined the workspace
+//       user: userId
+//     });
+
+//     isAdmin = result.user.is_admin;
+//     console.log(`${userId} is admin : ${isAdmin}`);
+//   } catch (error) {
+//     console.error(error);
+//   }
+
+//   return isAdmin;
+// }
+
 async function getIfAdmin(userId, context) {
   var isAdmin = false;
-  // check if this user is admin
-  try {
-    // Call the users.info method using the built-in WebClient
-    const result = await app.client.users.info({
-      // The token you used to initialize your app is stored in the `context` object
-      token: context.botToken,
-      // Call users.info for the user that joined the workspace
-      user: userId
-    });
-
-    isAdmin = result.user.is_admin;
-    console.log(`${userId} is admin : ${isAdmin}`);
-  } catch (error) {
-    console.error(error);
-  }
-
-  return isAdmin;
+  
+  return (process.env.ADMIN_USERS.split('|').includes(userId));
 }
 
 /*
