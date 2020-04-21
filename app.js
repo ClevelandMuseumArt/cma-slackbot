@@ -35,6 +35,8 @@ const initializeTeamsFromTokenData = () => {
       results = JSON.parse(this.responseText);
       
       for (const team of results.data) {
+        console.log(`Initializing team -> ${team.team.id} - ${team.team.name}`);
+        
         data[team.team.id] =  {
           "teamName": team.team.name,
           "botToken": team.access_token,
@@ -97,7 +99,7 @@ var arrayOfObjects;
  */
 
 // EVERYTHING REGARDING PROMPT GOES IN HERE
-var promptIndex = 0;
+var promptIndex = 1;
 var promptData = {
 };
 
@@ -129,7 +131,9 @@ const initializePromptData = () => {
           thisQuery = query.replace("__keyword__", choice.text);
         }
         
-        axios.get(`${openaccessUrl}?q=${thisQuery}&has_image=1&limit=500`)
+        const limitDeptTo = parseInt(process.env['LIMIT_DEPT_TO']);
+        
+        axios.get(`${openaccessUrl}?q=${thisQuery}&has_image=1&limit=500&limit_depts_to=${limitDeptTo}`)
           .then((res) => {
             promptData.artworks[choice.text] = res.data.data;
           });
@@ -213,62 +217,6 @@ const getPrompts = () => {
 const getArts = (keyword) => {
   return promptData.artworks[keyword];
 }
-
-// const getArts = async keyword => {
-//   var limit = 50;
-//   var prompt = getPrompts();
-  
-//   var parsedKeyword = keyword.replace(/:/g, "");
-
-//   // Default query, for choices that don't specify their own query
-//   var query = prompt.defaultQueryPattern.replace(/__keyword__/g, parsedKeyword);
-  
-//   // Custom per-choice queries
-//   for (i=0; i<prompt.choices.length; i++) {
-//     console.log(prompt.choices[i]);
-//     if (prompt.choices[i].text == keyword) {
-//       if (prompt.choices[i].query) {
-//         query = prompt.choices[i].query.replace(/__keyword__/g, parsedKeyword);
-//       }
-//     }
-//   }
-
-//   console.log('QUERY: ', query);
-  
-//   var artworks = [];
-
-//   try {
-//     var url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
-//     console.log("getting from: " + url);
-//     var results = await axios.get(url);
-
-//     if (results.data.info.total == 0) {
-//       query = parsedKeyword;
-
-//       url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
-//       console.log("NO RESULTS, using keyword only, getting from: " + url);
-//       results = await axios.get(url);
-//     }
-
-// //     if (results.data.info.total == 0) {
-// //       query = prompt.defaultQuery;
-
-// //       url = `${openaccessUrl}?q=${query}&has_image=1&limit=${limit}`;
-// //       console.log(
-// //         "STILL NO RESULTS, using default query, getting from: " + url
-// //       );
-// //       results = await axios.get(url);
-// //     }
-
-//     artworks = results.data.data;
-    
-//     console.log(artworks.length + " RESULTS");
-//   } catch (error) {
-//     console.log(error);
-//   }
-
-//   return artworks;
-// };
 
 const formatCreators = creators => {
   var s = "";
@@ -731,7 +679,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
           ":speech_balloon: " + prompts.resultPromptConclusion;
       }
     }
-
+    
     // the delayed end statement
     // Call the chat.scheduleMessage method with a token
     const endResult = await app.client.chat.scheduleMessage({
@@ -742,10 +690,10 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
       blocks: [],
       attachments: [{ blocks: footerBlocks }],
       text: " "
-    });
+    });   
     
     //send all users exhibition concluded message
-    await sendExhibitionStarted();
+    await sendExhibitionStarted(scheduledTime + 5);
     
     // Only clear data on success
     // TODO: ...do we want to rethink that
@@ -755,7 +703,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
   }
 }
 
-async function sendExhibitionStarted() {
+async function sendExhibitionStarted(scheduledTime) {
   console.log("Exhibition started message");
 
   var teamIds = stateGetTeamIds();
@@ -764,9 +712,10 @@ async function sendExhibitionStarted() {
     var team = stateGetTeamData(teamId);
     
     for (const userId in team.users) {
-      const intro = await app.client.chat.postMessage({
+      const intro = await app.client.chat.scheduleMessage({
           token: team.botToken,
           channel: team.users[userId].chatChannelId,
+          post_at: scheduledTime,
           blocks: [
             {
               "block_id": "exhibition_concluded_msg",
@@ -955,27 +904,10 @@ async function wordSelection(word, teamId, userId, botToken) {
   }
 }
 
-// function to get if admin
-// requires user:read
 async function getIfAdmin(userId, context) {
   var isAdmin = false;
-  // check if this user is admin
-  try {
-    // Call the users.info method using the built-in WebClient
-    const result = await app.client.users.info({
-      // The token you used to initialize your app is stored in the `context` object
-      token: context.botToken,
-      // Call users.info for the user that joined the workspace
-      user: userId
-    });
-
-    isAdmin = result.user.is_admin;
-    console.log(`${userId} is admin : ${isAdmin}`);
-  } catch (error) {
-    console.error(error);
-  }
-
-  return isAdmin;
+  
+  return (process.env.ADMIN_USERS.split('|').includes(userId));
 }
 
 /*
