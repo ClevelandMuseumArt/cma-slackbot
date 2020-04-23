@@ -4,7 +4,6 @@ const { App } = require("@slack/bolt");
 const axios = require("axios");
 const dotenv = require("dotenv");
 const logts = require("log-timestamp");
-var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
 // block templates
 var exhibit_header_template = require("./exhibit_header_template.json");
@@ -20,40 +19,6 @@ dotenv.config();
 
 const slackBotApiUrl = process.env['SLACK_BOT_API_URL'];
 const openaccessUrl = process.env['OPENACCESS_URL'];
-
-// NOT ASYNC!
-const initializeTeamsFromTokenData = () => {
-  const tokenUrl = `${slackBotApiUrl}tokens/`;
-  
-  // const results = await axios.get(tokenUrl);
-  var xmlhttp = new XMLHttpRequest();
-  var results;
-  var data = {};
-  
-  xmlhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      results = JSON.parse(this.responseText);
-      
-      for (const team of results.data) {
-        console.log(`Initializing team -> ${team.team.id} - ${team.team.name}`);
-        
-        data[team.team.id] =  {
-          "teamName": team.team.name,
-          "botToken": team.access_token,
-          "botId": team.bot_id,
-          "botUserId": team.bot_user_id,
-          "channelId": team.incoming_webhook.channel_id,
-          "channelName": team.incoming_webhook.channel,
-          "users": {}
-        }  
-      }
-    }
-  };
-  xmlhttp.open("GET", tokenUrl, true);
-  xmlhttp.send();
-  
-  return data;
-}
 
 const getTokenData = async (teamId) => {
   const tokenUrl = `${slackBotApiUrl}tokens/${teamId}`;
@@ -146,15 +111,8 @@ const initializePromptData = () => {
 // END PROMPT FUNCTIONS
 
 // EVERYTHING REGARDING STATE GOES IN HERE
-var stateData = {
-};
 
-// TODO: Probably could use a refactor, but keeping it compatible for now
-const stateGetTeamIds = () => {
-  return Object.keys(stateData);
-}
-
-const stateGetTeamIds2 = async () => {
+const stateGetTeamIds = async () => {
   const url = `${slackBotApiUrl}team_ids`;
   
   const results = await axios.get(url);
@@ -166,12 +124,7 @@ const stateGetTeamIds2 = async () => {
   }
 }
 
-// TODO: old way
-const stateGetTeamData = (teamId) => {    
-  return stateData[teamId];
-};
-
-const stateGetTeamData2 = async (teamId) => {    
+const stateGetTeamData = async (teamId) => {    
   const url = `${slackBotApiUrl}team/${teamId}`;
   
   const results = await axios.get(url);
@@ -182,7 +135,7 @@ const stateGetTeamData2 = async (teamId) => {
 };
 
 const hasExhibitParticipants = async (teamId) => {
-  const team = await stateGetTeamData2(teamId);
+  const team = await stateGetTeamData(teamId);
   
   if (team.users) {
     for (const user of team.users) {
@@ -195,11 +148,7 @@ const hasExhibitParticipants = async (teamId) => {
   return false
 };
 
-const stateGetUserData = (teamId, userId) => {
-    return stateData[teamId].users[userId];  
-};
-
-const stateGetUserData2 = async (teamId, userId) => {
+const stateGetUserData = async (userId) => {
   const url = `${slackBotApiUrl}user/${userId}`;
   
   const results = await axios.get(url)
@@ -214,15 +163,7 @@ const stateGetUserData2 = async (teamId, userId) => {
   }
 };
 
-const stateSetUserData = (teamId, userId, data) => {
-    if (!stateData[teamId].users[userId]) {
-        stateData[teamId].users[userId] = {};
-    }
-    
-    Object.assign(stateData[teamId].users[userId], data);
-};
-
-const stateSetUserData2 = async (teamId, userId, currentState) => {
+const stateSetUserData = async (userId, currentState, teamId) => {
   const url = `${slackBotApiUrl}user/${userId}`;
   
   var req = {
@@ -235,11 +176,7 @@ const stateSetUserData2 = async (teamId, userId, currentState) => {
   return results.data; 
 }
 
-const stateDeleteUserData = (teamId, userId) => {
-  delete stateData[teamId].users[userId];
-};
-
-const stateDeleteUserData2 = async (teamId, userId) => {
+const stateDeleteUserData = async (userId) => {
   const url = `${slackBotApiUrl}user/${userId}`;
   
   const results = await axios.delete(url);
@@ -247,15 +184,11 @@ const stateDeleteUserData2 = async (teamId, userId) => {
   return results.data; 
 };
 
-const stateClearUserData = (teamId) => {
-  stateData[teamId].users = {};
-}
-
-const stateClearUserData2 = (teamId) => {
-  const team = stateGetTeamData2(teamId);
+const stateClearUserData = async (teamId) => {
+  const team = await stateGetTeamData(teamId);
   
   for (var user of team.users) {
-    stateDeleteUserData2(teamId, user.user_id);
+    stateDeleteUserData(user.user_id);
   }
 }
 
@@ -328,16 +261,15 @@ function getNextRndInteger(src, min, max) {
 // returns list of users in a team's default channel
 async function getAllUsersInDefaultChannel(teamId) {
   var users = [];
-  var team = stateGetTeamData(teamId);
-  var botToken = team.botToken;
+  var team = await stateGetTeamData(teamId);
   
   // get user list in channel
   try {
     // Call the conversations.members method using the built-in WebClient
     const result = await app.client.conversations.members({
       // The token you used to initialize your app is stored in the `context` object
-      token: botToken,
-      channel: team.channelId
+      token: team.bot_token,
+      channel: team.channel_id
     });
     users = result.members;
   } catch (error) {
@@ -351,7 +283,7 @@ async function getAllUsersInDefaultChannel(teamId) {
       // Call the users.info method using the built-in WebClient
       const result = await app.client.users.info({
         // The token you used to initialize your app is stored in the `context` object
-        token: botToken,
+        token: team.bot_token,
         // Call users.info for the user that joined the workspace
         user: users[i]
       });
@@ -470,8 +402,7 @@ async function calculateScheduledDate(
 async function triggerFirstExhibit(context) {
   console.log("first scheduled exhibit");
   
-  // var teamIds = stateGetTeamIds();
-  var teamIds = await stateGetTeamIds2();
+  var teamIds = await stateGetTeamIds();
   
   for (const teamId of teamIds) {
     if (hasExhibitParticipants(teamId)) {
@@ -494,17 +425,15 @@ async function dailyExhibitTask(context) {
 async function triggerFirstPrompt(channel_id, context) {
   console.log("first scheduled prompt");
 
-  // var teamIds = stateGetTeamIds();
-  var teamIds = await stateGetTeamIds2();
-  
+  var teamIds = await stateGetTeamIds();  
   
   for (const teamId of teamIds) { 
-    var team = stateGetTeamData2(teamId);
+    var team = stateGetTeamData(teamId);
     
     // we have the option to just loop through users who participated
     var users = await getAllUsersInDefaultChannel(teamId);
     
-    console.log("here? ", users)
+    console.log("here? ", teamId, users)
     
     for (const user of users) {
       // post message
@@ -525,11 +454,10 @@ async function triggerFirstPrompt(channel_id, context) {
 async function dailyPromptTask(channel_id, context) {
   console.log("doing this in an interval!");
 
-  // var teamIds = stateGetTeamIds();
-  var teamIds = stateGetTeamIds2();
+  var teamIds = stateGetTeamIds();
   
   for (const teamId of teamIds) { 
-    var team = stateGetTeamData2(teamId);
+    var team = stateGetTeamData(teamId);
     
     // we have the option to just loop through users who participated
     var users = await getAllUsersInDefaultChannel(teamId);
@@ -607,7 +535,7 @@ async function promptSchedule(
 }
 
 async function exhibitScheduledMessage(teamId, context, delayedMins) {
-  const team = await stateGetTeamData2(teamId);
+  const team = await stateGetTeamData(teamId);
 
   // just get delayed reponse
   delayedMins += 0.2; // to safe guard if delayedMins were 0;
@@ -774,7 +702,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
 async function sendExhibitionStarted(teamId, scheduledTime) {
   console.log("Exhibition started message");
   
-  var team = await stateGetTeamData2(teamId);
+  var team = await stateGetTeamData(teamId);
   
   console.log("got here!")
   
@@ -802,7 +730,7 @@ async function sendExhibitionStarted(teamId, scheduledTime) {
 
 // this is where the prompt message is composed
 async function promptInvoke(channelId, teamId, userId, context) {
-  var team = stateGetTeamData(teamId);
+  var team = await stateGetTeamData(teamId);
   
   console.log(">> invoking prompt with channelId, teamId, userId ", channelId, teamId, userId);
   
@@ -813,9 +741,7 @@ async function promptInvoke(channelId, teamId, userId, context) {
       awaitingQueryText: true
     };
   
-  stateSetUserData(teamId, userId, currentState);
-
-  stateSetUserData2(teamId, userId, currentState);  
+  stateSetUserData(userId, currentState, teamId);
 
   // variables (to be updated dynamically)
   var prompts = getPrompts();
@@ -869,7 +795,7 @@ async function promptInvoke(channelId, teamId, userId, context) {
     }
 
     const result = await app.client.chat.postMessage({
-      token: team.botToken,
+      token: team.bot_token,
       // Channel to send message to
       channel: channelId,
       // Main art selection interaction
@@ -883,9 +809,8 @@ async function promptInvoke(channelId, teamId, userId, context) {
   }
 }
 
-async function wordSelection(word, teamId, userId, botToken) {
-  // const user = stateGetUserData(teamId, userId);
-  const user = await stateGetUserData2(teamId, userId);
+async function wordSelection(word, userId, botToken) {
+  const user = await stateGetUserData(userId);
 
   var wordIntro = `> <https://www.clevelandart.org/art/collection/search?search=${word}|${word}>`;  
   
@@ -930,9 +855,7 @@ async function wordSelection(word, teamId, userId, botToken) {
   user.artworkUrl = featured.url;
   user.textResponse = "";
   
-  stateSetUserData(teamId, userId, user);
-
-  stateSetUserData2(teamId, userId, user);  
+  stateSetUserData(userId, user);  
   
   // update selection block
   var promptSelectionBlocks = prompt_selection_template.blocks;
@@ -994,8 +917,7 @@ app.message("", async ({ message, payload, context, say }) => {
   var userId = payload.user;
   var teamId = payload.team;
   
-  // var user = stateGetUserData(teamId, userId);
-  var user = await stateGetUserData2(teamId, userId);
+  var user = await stateGetUserData(userId);
   
   // don't handle any input if user hasn't hit query button.
   if (!user || user.awaitingQueryText) {
@@ -1018,7 +940,7 @@ app.message("", async ({ message, payload, context, say }) => {
 
   // TODO: fix cancel
   if (escapedInput == "cancel") {
-    stateDeleteUserData(teamId, userId);
+    stateDeleteUserData(userId);
 
     say(`Your selection have been canceled.`);
     return;
@@ -1037,9 +959,7 @@ app.message("", async ({ message, payload, context, say }) => {
     user.awaitingArtworkSelection = false;
     user.textResponse = rawUserInput;
 
-    stateSetUserData(teamId, userId, user);
-    
-    stateSetUserData2(teamId, userId, user);  
+    stateSetUserData(userId, user);
     
     // all responses were collected, scheduling message
     const secondsSinceEpoch = Date.now() / 1000;
@@ -1088,10 +1008,8 @@ app.message("", async ({ message, payload, context, say }) => {
     user.artworkUrl = featured.url;
     user.textResponse = "";
     
-    stateSetUserData(teamId, userId, user);
+    stateSetUserData(userId, user);
 
-    stateSetUserData2(teamId, userId, user);  
-    
     // update selection block
     var promptSelectionBlocks = prompt_selection_template.blocks;
     var composedImageText = "";
@@ -1136,9 +1054,8 @@ app.message("", async ({ message, payload, context, say }) => {
 // Cancel everything by responding the actual word
 app.message("cancel", async ({ message, say }) => {
   var userId = message.user;
-  var teamId = message.team;
   
-  stateDeleteUserData(teamId, userId);
+  stateDeleteUserData(userId);
 
   await say(`Your selection have been canceled.`);
 });
@@ -1155,10 +1072,8 @@ app.command("/cma_test", async ({ ack, payload, context, command }) => {
 
   console.log("isAdmin? ", isAdmin);
   
-  // console.log("stateData = ", JSON.stringify(stateData, undefined, 2));
-  // console.log("promptData = ", JSON.stringify(promptData.prompt, undefined, 2));
-  console.log("team2 data = ", await stateGetTeamData2('T011ZT4V93J'));
-  console.log("user2 data = ", await stateGetUserData2('1111', 'U011ZT4V9DE'));
+  console.log("team2 data = ", await stateGetTeamData('T011ZT4V93J'));
+  console.log("user2 data = ", await stateGetUserData('1111', 'U011ZT4V9DE'));
 
 });
 
@@ -1320,8 +1235,7 @@ for (var i = 0; i < numChoices; i++) {
     var userId = body.user.id;
     var teamId = body.team.id;
 
-    // var user = stateGetUserData(teamId, userId);
-    var user = await stateGetUserData2(teamId, userId);
+    var user = await stateGetUserData(userId);
     
     // Acknowledge the button request
     ack();
@@ -1329,7 +1243,7 @@ for (var i = 0; i < numChoices; i++) {
     // TODO: this is how it should *all* work, does userData content exist, not
     // in "awaiting*" flags
     if (!user.keyword) {
-      wordSelection(payload.value , teamId, userId, context.botToken);
+      wordSelection(payload.value , userId, context.botToken);
     } 
   });
 }
@@ -1347,10 +1261,8 @@ app.action("visit_button", async ({ ack, body, context }) => {
 // You must set up a Request URL under Interactive Components on your app configuration page
 app.action("shuffle_button", async ({ ack, body, context }) => {
   var userId = body.user.id;
-  var teamId = body.team.id;
   
-  // var user = stateGetUserData(teamId, userId);
-  var user = await stateGetUserData2(teamId, userId);
+  var user = await stateGetUserData(userId);
     
   // Acknowledge the button request
   ack();
@@ -1380,9 +1292,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   user.lastImgTitle = featured.title;
   user.artworkUrl = featured.url;
   
-  stateSetUserData(teamId, userId, user);
-  
-  stateSetUserData2(teamId, userId, user);  
+  stateSetUserData(userId, user);
   
   // update selection block
   var promptSelectionBlocks = prompt_selection_template.blocks;
@@ -1434,10 +1344,8 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
 // You must set up a Request URL under Interactive Components on your app configuration page
 app.action("confirm_button", async ({ ack, body, context }) => {
   var userId = body.user.id;
-  var teamId = body.team.id;
   
-  // var user = stateGetUserData(teamId, userId);
-  var user = await stateGetUserData2(teamId, userId);
+  var user = await stateGetUserData(userId);
   
   // Acknowledge the button request
   ack();
@@ -1454,9 +1362,8 @@ app.action("confirm_button", async ({ ack, body, context }) => {
     // reaffirm status
     //adding state
     user.awaitingTextResponse = true;
-    stateSetUserData(teamId, userId, user);
 
-    stateSetUserData2(teamId, userId, user);  
+    stateSetUserData(userId, user);
     
     var composedImageText = "";
     if (
@@ -1654,7 +1561,6 @@ app.event("app_home_opened", async ({ event, context }) => {
   await app.start(process.env.PORT || 3000);
   
   // initialize state
-  stateData = initializeTeamsFromTokenData();
   promptData = initializePromptData(); 
   
   console.log("⚡️ Bolt app is running!");
