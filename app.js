@@ -576,12 +576,12 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
       // insert credits if user response exists
       if (creditString != "") {
         headerBlocks[i].text.text =
-          ":speech_balloon: Today's exhibition is curated by " +
+          "Today's exhibition is curated by " +
           creditString +
           "and the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
       } else {
         headerBlocks[i].text.text =
-          ":speech_balloon: Today's exhibition is curated by the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
+          "Today's exhibition is curated by the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
       }
     }
     if (headerBlocks[i].block_id === "header_prompt") {
@@ -671,8 +671,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
     // replace with correct content
     for (var i = 0; i < footerBlocks.length; i++) {
       if (footerBlocks[i].block_id === "footer_title") {
-        footerBlocks[i].text.text =
-          ":speech_balloon: " + prompts.resultPromptConclusion;
+        footerBlocks[i].text.text = prompts.resultPromptConclusion;
       }
     }
     
@@ -717,7 +716,7 @@ async function sendExhibitionStarted(teamId, scheduledTime) {
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": `> :speech_balloon: *Today's exhibition has started on the ${team.channel_name} channel*`
+              "text": `> *Today's exhibition has started on the ${team.channel_name} channel*`
             }
           }        
         ],
@@ -776,8 +775,7 @@ async function promptInvoke(channelId, teamId, userId, context) {
         promptInvokeBlocks[i].text.text = "Today's Exhibition:";
       }
       if (promptInvokeBlocks[i].block_id === "prompt_title") {
-        promptInvokeBlocks[i].text.text =
-          ":speech_balloon: " + "*" + prompts.title + "*";
+        promptInvokeBlocks[i].text.text = `*${prompts.title}*`;
       }
       if (promptInvokeBlocks[i].block_id === "prompt_image") {
         // promptInvokeBlocks[i].title.text = prompts.promptArtTitle;
@@ -786,7 +784,7 @@ async function promptInvoke(channelId, teamId, userId, context) {
       }
       
       if (promptInvokeBlocks[i].block_id === "prompt_prompt") {
-        promptInvokeBlocks[i].text.text = ":speech_balloon: " + prompts.prompt ;
+        promptInvokeBlocks[i].text.text = prompts.prompt ;
       }
       
       if (promptInvokeBlocks[i].block_id === "word_buttons") {
@@ -950,9 +948,7 @@ app.message("", async ({ message, payload, context, say }) => {
   if (user.awaitingTextResponse) {
     console.log("record user input from: " + message.user);
     await say(
-      `>:speech_balloon: Got it, <@${message.user}>! _${
-        user.lastImgTitle
-      }_ and your comment will be featured in today's exhibit.`
+      `> Got it, <@${message.user}>! _${user.lastImgTitle}_ and your comment will be featured in today's exhibit.`
     );
     
     user.awaitingTextResponse = false;
@@ -1069,11 +1065,11 @@ app.command("/cma_test", async ({ ack, payload, context, command }) => {
   ack();
   
   const isAdmin = await getIfAdmin(payload.user_id, context);
-
-  console.log("isAdmin? ", isAdmin);
+  const teamIds = await stateGetTeamIds();
   
-  console.log("team2 data = ", await stateGetTeamData('T011ZT4V93J'));
-  console.log("user2 data = ", await stateGetUserData('1111', 'U011ZT4V9DE'));
+  console.log("isAdmin? ", isAdmin);
+  console.log("teams: ", teamIds);
+  
 
 });
 
