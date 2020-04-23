@@ -3,7 +3,6 @@ dependencies:
   axios: 0.19.2
   dotenv: 8.2.0
   log-timestamp: 0.3.0
-  xmlhttprequest: 1.8.0
 packages:
   /@slack/bolt/1.6.0:
     dependencies:
@@ -642,12 +641,6 @@ packages:
       node: '>= 0.8'
     resolution:
       integrity: sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
-  /xmlhttprequest/1.8.0:
-    dev: false
-    engines:
-      node: '>=0.4.0'
-    resolution:
-      integrity: sha1-Z/4HXFwk/vOfnWX197f+dRcZaPw=
 registry: 'https://registry.npmjs.org/'
 shrinkwrapMinorVersion: 9
 shrinkwrapVersion: 3
@@ -656,4 +649,3 @@ specifiers:
   axios: ^0.19.2
   dotenv: ^8.2.0
   log-timestamp: ^0.3.0
-  xmlhttprequest: ^1.8.0
