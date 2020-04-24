@@ -35,15 +35,14 @@ const getTokenData = async (teamId) => {
 
 const authorizeFn = async ({teamId}) => {
   const results = await getTokenData(teamId);
-  
+
   return {
     botToken: results.botToken,
     botId: results.botId,
     botUserId: results.botUserId
-  };  
+  };   
 }
-
-
+ 
 const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET});
 
 // scheduling varaibles
@@ -258,45 +257,36 @@ function getNextRndInteger(src, min, max) {
   return out;
 }
 
-// returns list of users in a team's default channel
-async function getAllUsersInDefaultChannel(teamId) {
-  var users = [];
-  var team = await stateGetTeamData(teamId);
+async function getBotChannels(botToken, botUserId) {
+  const result =  await app.client.users.conversations({
+    token: botToken,
+    user: botUserId
+  }); 
   
-  // get user list in channel
-  try {
-    // Call the conversations.members method using the built-in WebClient
-    const result = await app.client.conversations.members({
-      // The token you used to initialize your app is stored in the `context` object
-      token: team.bot_token,
-      channel: team.channel_id
-    });
-    users = result.members;
-  } catch (error) {
-    console.error(error);
-  }
-
-  // making sure only real users are included
-  for (var i = users.length - 1; i >= 0; i--) {
-    // to get user info
-    try {
-      // Call the users.info method using the built-in WebClient
-      const result = await app.client.users.info({
-        // The token you used to initialize your app is stored in the `context` object
-        token: team.bot_token,
-        // Call users.info for the user that joined the workspace
-        user: users[i]
-      });
-
-      // check if user is bot, if it is, discard
-      if (result.user.is_bot) {
-        console.log(`discard ${users[i]}`);
-        users.splice(i, 1);
-      }
-    } catch (error) {
-      console.error(error);
+  const channels = result.channels.map((item) => { 
+    return {
+      id: item.id,
+      name: item.name
     }
+  });  
+  
+  return channels;
+}
+
+async function getAllUsersInTeamChannel(team) {
+  const channels = await getBotChannels(team.bot_token, team.bot_user_id);
+  var users = [];
+  
+  if (channels.length > 0) {  
+    const channel = channels[0];
+
+    const result = await app.client.conversations.members({
+      token: team.bot_token,
+      channel: channel.id
+    });
+    users = result.members; 
   }
+  
   return users;
 }
 
@@ -411,61 +401,20 @@ async function triggerFirstExhibit(context) {
       console.log("No exhibit participants for team ", teamId);
     }
   }
-  
-  // scheduledExhibitInterval = setInterval(function() {
-  //   dailyExhibitTask(context);
-  // }, intervalOfScheduledExhibit * 1000); // schedule interval in milliseconds
-}
-
-async function dailyExhibitTask(context) {
-  console.log("daily exhibit!");
-  // post message
 }
 
 async function triggerFirstPrompt(channel_id, context) {
-  console.log("first scheduled prompt");
-
   var teamIds = await stateGetTeamIds();  
   
   for (const teamId of teamIds) { 
-    var team = stateGetTeamData(teamId);
+    var team = await stateGetTeamData(teamId);
     
     // we have the option to just loop through users who participated
-    var users = await getAllUsersInDefaultChannel(teamId);
-    
-    console.log("here? ", teamId, users)
+    var users = await getAllUsersInTeamChannel(team);
     
     for (const user of users) {
-      // post message
       // use userid as channel id to dm
       await promptInvoke(user, teamId, user, context);
-    }
-  }
-  
-// set daily
-  // scheduledPromptInterval = setInterval(function() {
-  //   dailyPromptTask(channel_id, context);
-  // }, intervalOfScheduledExhibit * 1000); // schedule interval in milliseconds
-}
-
-// TODO:
-// NOTE: this is a lot of function calls when you could just reference stateData directly,
-//       but this data may eventually reside in a different state machine mechanism. 
-async function dailyPromptTask(channel_id, context) {
-  console.log("doing this in an interval!");
-
-  var teamIds = stateGetTeamIds();
-  
-  for (const teamId of teamIds) { 
-    var team = stateGetTeamData(teamId);
-    
-    // we have the option to just loop through users who participated
-    var users = await getAllUsersInDefaultChannel(teamId);
-    
-    for (const user of users) {
-      // post message
-      // use userid as channel id to dm
-      await promptInvoke(users[i], teamId, users[i], context);
     }
   }
 }
@@ -536,6 +485,8 @@ async function promptSchedule(
 
 async function exhibitScheduledMessage(teamId, context, delayedMins) {
   const team = await stateGetTeamData(teamId);
+  const channels = await getBotChannels(team.bot_token, team.bot_user_id);
+  const channel = channels[0];
 
   // just get delayed reponse
   delayedMins += 0.2; // to safe guard if delayedMins were 0;
@@ -543,13 +494,13 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
   var scheduledTime = secondsSinceEpoch + delayedMins * 60.0; // 10 sec from now
   console.log("current time " + secondsSinceEpoch);
   console.log("delayed to time"  + scheduledTime);
-  console.log(`SEND TO CHANNEL ${team.channelId}`);
+  console.log(`SEND TO CHANNEL ${channel.name}`);
 
   // prompt variables
   var prompts = getPrompts();
 
   // talking to api
-  var slackbotId = `id-${teamId}-${team.channelId}-${scheduledTime}`;
+  var slackbotId = `id-${teamId}-${channel.id}-${scheduledTime}`;
   var data = {
     state: team
   };
@@ -597,16 +548,13 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
     //         userBlocks[i].elements[0].url = artworkUrl; //cma website
     //       }
   }
-
-  console.log("What happened? ", team)
   
   try {
     // the delayed opening statement
     // Call the chat.scheduleMessage method with a token
     const result = await app.client.chat.scheduleMessage({
-      // The token you used to initialize your app is stored in the `context` object
       token: team.bot_token,
-      channel: team.channel_id, // find channel id or set current channel as post channel
+      channel: channel.id, 
       post_at: scheduledTime,
       blocks: [],
       attachments: [{ blocks: headerBlocks }],
@@ -658,7 +606,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
           // The token you used to initialize your app is stored in the `context` object
           token: team.bot_token,
           text: " ",
-          channel: team.channel_id, // find channel id or set current channel as post channel
+          channel: channel.id, // find channel id or set current channel as post channel
           post_at: scheduledTime + 2, // delay so the prompt comes first
           blocks: [],
           attachments: [{ blocks: userBlocks }]
@@ -680,7 +628,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
     const endResult = await app.client.chat.scheduleMessage({
       // The token you used to initialize your app is stored in the `context` object
       token: team.bot_token,
-      channel: team.channel_id, // find channel id or set current channel as post channel
+      channel: channel.id, // find channel id or set current channel as post channel
       post_at: scheduledTime + 5, // delayed more for the ending message
       blocks: [],
       attachments: [{ blocks: footerBlocks }],
@@ -912,6 +860,8 @@ async function getIfAdmin(userId, context) {
 
 // Record after asking for response
 app.message("", async ({ message, payload, context, say }) => {
+  console.log(message.text);
+  
   var userId = payload.user;
   var teamId = payload.team;
   
@@ -1067,8 +1017,22 @@ app.command("/cma_test", async ({ ack, payload, context, command }) => {
   const isAdmin = await getIfAdmin(payload.user_id, context);
   const teamIds = await stateGetTeamIds();
   
+  const team = await stateGetTeamData(payload.team_id)
+  const result = await app.client.users.conversations({
+    token: context.botToken,
+    user: team.bot_user_id
+  }); 
+  const channels = result.channels.map((item) => { 
+    return {
+      id: item.id,
+      name: item.name
+    }
+  });
+  
+  console.log("team_id = ", payload.team_id);
+  console.log("channels = ", channels);
   console.log("isAdmin? ", isAdmin);
-  console.log("teams: ", teamIds);
+  console.log("teams: ", teamIds); 
   
 
 });
