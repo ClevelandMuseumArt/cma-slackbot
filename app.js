@@ -1412,84 +1412,60 @@ app.action("prompt_time_selection", async ({ ack, payload, body, context }) => {
   }
 });
 
-/*
- * HOME SCREEN
- */
-
 
 //onboarding
-app.event("app_home_opened", async ({ event, context }) => {
-  var isUserAdmin = await getIfAdmin(event.user, context);
+app.event("app_home_opened", async ({ context, event, say }) => {
 
-  try {
-    /* view.publish is the method that your app uses to push a view to the Home tab */
-    const result = await app.client.views.publish({
-      /* retrieves your xoxb token from context */
-      token: context.botToken,
-
-      /* the user that opened your app's app home */
-      user_id: event.user,
-
-      /* the view payload that appears in the app home*/
-      view: {
-        type: "home",
-        callback_id: "home_view",
-
-        /* body of the view */
-        blocks: [
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "*Welcome to ArtLens Slacker* :art:"
-            }
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "We are excited to share Open Access artwork from the Cleveland Museum of Art’s Collection with you. Our expansive collection contains over 30,000 works of art. Every day you will receive a prompt, and based on your response, we will curate a work of art from CMA’s collection. Once we’ve gathered yours and your co-worker's selections and comments, we’ll host an exhibit for the whole team to see. We’re looking forward to what you’ll share!"
-            }
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "⚡️ *Before you begin, make sure that you add the _ArtLens Slacker_ app to the default channel you selected on install and invite users to join. *"
-            }
+  var welcome = {
+    "welcome": {
+      "text": "Please connect your calendar to Calendar App.",
+      "blocks": [
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "Hi there :wave:"
           }
-        ]
-      }
-    });
-  } catch (error) {
-    console.error(error);
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "Welcome to ArtLensSlacker :art: an app where the Cleveland Museum of Art curates daily exhibitions from you and your team. Getting started is simple, here’s what you’ll need to do:"
+          }
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "• Go to the channel where you’d like to post your team’s exhibitions. We recommend using #general, #random, or any channel your whole team shares."
+          }
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "• Invite ArtLensSlacker to your selected channel with the command `/invite @artlens-slacker` "
+          }
+        }
+      ]
+    }
   }
 
-  //TODO: admin view?
-//   try {
-//     /* view.publish is the method that your app uses to push a view to the Home tab */
-//     const result = await app.client.views.publish({
-//       /* retrieves your xoxb token from context */
-//       token: context.botToken,
+  if (event.tab === "messages") {
+    // check the message history if there was a prior interaction for this App DM
+    let history = await app.client.conversations.history({
+      token: context.botToken,
+      channel: event.channel,
+      count: 1 // we only need to check if >=1 messages exist
+    });
 
-//       /* the user that opened your app's app home */
-//       user_id: event.user,
-
-//       /* the view payload that appears in the app home*/
-//       view: {
-//         type: "home",
-//         callback_id: "home_view",
-
-//         /* body of the view */
-//         blocks: home_template.blocks
-//       }
-//     });
-//   } catch (error) {
-//     console.error(error);
-//   }
+    // if there was no prior interaction (= 0 messages),
+    // it's save to send a welcome message
+    if (!history.messages.length) {
+      say(welcome.welcome);
+    }
+  }
 });
 
 /*
