@@ -28,8 +28,7 @@ const getTokenData = async (teamId) => {
   return {
     "botToken": results.data.data.access_token,
     "botId": results.data.data.bot_id,
-    "botUserId": results.data.data.bot_user_id,
-    "botChannelId": results.data.data.incoming_webhook.channel_id
+    "botUserId": results.data.data.bot_user_id
   }  
 }
 
@@ -56,15 +55,12 @@ var scheduledPromptInterval; // setInterval
 var scheduledExhibitTimeout; // setTimeout
 var scheduledPromptTimeout; // setTimrout
 
-var lastArtIndex = 0;
-var arrayOfObjects;
-
 /*
  * FUNCTIONS
  */
 
 // EVERYTHING REGARDING PROMPT GOES IN HERE
-var promptIndex = 2;
+var promptIndex = 3;
 var promptData = {
 };
 
@@ -91,7 +87,9 @@ const initializePromptData = () => {
     
       for (const choice of promptData.prompt.choices) {
         if (choice.query) {
-          thisQuery = choice.query;
+          // not stricly necessary to do replacement since you know what __keyword__
+          // is on the CMS side, but prevents user error
+          thisQuery = choice.query.replace("__keyword__", choice.text);
         } else {
           thisQuery = query.replace("__keyword__", choice.text);
         }
@@ -236,14 +234,6 @@ const formatCreators = creators => {
 
   return s;
 };
-
-function getItem(id) {
-  return arrayOfObjects.find(item => item.id === id).title;
-}
-
-function getItemByIndex(index) {
-  return arrayOfObjects[index];
-}
 
 function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
@@ -649,9 +639,8 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
 async function sendExhibitionStarted(teamId, scheduledTime) {
   console.log("Exhibition started message");
   
-  var team = await stateGetTeamData(teamId);
-  
-  console.log("got here!")
+  const team = await stateGetTeamData(teamId);
+  const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   
   for (const user of team.users) {
     const intro = await app.client.chat.scheduleMessage({
@@ -664,7 +653,7 @@ async function sendExhibitionStarted(teamId, scheduledTime) {
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": `> *Today's exhibition has started on the ${team.channel_name} channel*`
+              "text": `> *Today's exhibition has started on the ${channels[0].name} channel*`
             }
           }        
         ],
@@ -701,6 +690,7 @@ async function promptInvoke(channelId, teamId, userId, context) {
     // create buttons from choices, for max of 5 (only 5 button action_ids)
     var btns = [];
     var btnNum = (prompts.choices.length <= 5 ? prompts.choices.length : 5);
+    // TODO: ensure all prompts.choices have results
     
     for (var i = 0; i < btnNum; i++) {
       var btn = {
@@ -788,8 +778,7 @@ async function wordSelection(word, userId, botToken) {
 
   // store info and status
   console.log("getting the art index of: " + targetIndex);
-  lastArtIndex = targetIndex;
-
+  
   var creators = formatCreators(featured.creators);
   
   user.keyword = word;
@@ -942,8 +931,7 @@ app.message("", async ({ message, payload, context, say }) => {
 
     // store info and status
     console.log("getting the art index of: " + targetIndex);
-    lastArtIndex = targetIndex;
-
+    
     var creators = formatCreators(featured.creators);
     
     user.awaitingTextResponse = true;
@@ -1017,24 +1005,17 @@ app.command("/cma_test", async ({ ack, payload, context, command }) => {
   const isAdmin = await getIfAdmin(payload.user_id, context);
   const teamIds = await stateGetTeamIds();
   
-  const team = await stateGetTeamData(payload.team_id)
-  const result = await app.client.users.conversations({
-    token: context.botToken,
-    user: team.bot_user_id
-  }); 
-  const channels = result.channels.map((item) => { 
-    return {
-      id: item.id,
-      name: item.name
-    }
-  });
-  
+  for (const teamId of teamIds) {
+    var team = await stateGetTeamData(teamId)
+    var channels = await getBotChannels(team.bot_token, team.bot_user_id);
+    
+    console.log(teamId, team.team_name, channels);
+  }
+    
   console.log("team_id = ", payload.team_id);
   console.log("channels = ", channels);
   console.log("isAdmin? ", isAdmin);
   console.log("teams: ", teamIds); 
-  
-
 });
 
 // invoke cma prompt for demo
@@ -1242,8 +1223,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   var featured = artObjects[targetIndex];
 
   console.log("getting the next art index of: " + targetIndex);
-  lastArtIndex = targetIndex;
-
+  
   var creators = formatCreators(featured.creators);
 
   user.awaitingTextResponse = true;
