@@ -21,6 +21,9 @@ dotenv.config();
 const slackBotApiUrl = process.env['SLACK_BOT_API_URL'];
 const openaccessUrl = process.env['OPENACCESS_URL'];
 
+// authenticate
+axios.defaults.headers.common['Authentication'] = process.env['SLACK_BOT_API_TOKEN'];
+
 const getTokenData = async (teamId) => {
   const tokenUrl = `${slackBotApiUrl}tokens/${teamId}`;
   
@@ -46,9 +49,33 @@ const authorizeFn = async ({teamId}) => {
 const receiver = new ExpressReceiver({ signingSecret: process.env.SLACK_SIGNING_SECRET, endpoints: '/slack/events' });
 
 // command endpoints
-receiver.app.get('/test', (req, res) => {  testFn(); res.json({"fn":"test"}); });
-receiver.app.get('/trigger-prompt', (req, res) => { triggerPrompt(); res.json({"fn":"trigger-prompt"}); });
-receiver.app.get('/trigger-exhibition', (req, res) => { triggerExhibition(); res.json({"fn":"trigger-exhibition"}); });
+receiver.app.get('/test', (req, res) => {  
+  if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {
+    testFn(); 
+  
+    res.json({"fn":"test"}); 
+  } else {
+    res.sendStatus(401);
+  }
+});
+
+receiver.app.get('/trigger-prompt', (req, res) => { 
+  if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {  
+    triggerPrompt(); 
+    res.json({"fn":"trigger-prompt"}); 
+  } else {
+    res.sendStatus(401);
+  }                                                  
+});
+
+receiver.app.get('/trigger-exhibition', (req, res) => { 
+  if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {    
+    triggerExhibition(); 
+    res.json({"fn":"trigger-exhibition"}); 
+  } else {
+    res.sendStatus(401);
+  }     
+});
  
 const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET, receiver: receiver});
 // const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET});
@@ -70,7 +97,7 @@ var scheduledPromptTimeout; // setTimrout
  */
 
 // EVERYTHING REGARDING PROMPT GOES IN HERE
-var promptIndex = 3;
+var promptIndex = 0;
 var promptData = {
 };
 
@@ -1220,16 +1247,17 @@ app.message("cancel", async ({ message, say }) => {
  */
 
 const testFn = async () => {
+  console.log("### TESTING ###");
   const teamIds = await stateGetTeamIds();
   
   for (const teamId of teamIds) {
     var team = await stateGetTeamData(teamId)
+  
     var channels = await getBotChannels(team.bot_token, team.bot_user_id);
     
     console.log(teamId, team.team_name, channels);
   }
-    
-  console.log("channels = ", channels);
+
   
   return true;
 }
