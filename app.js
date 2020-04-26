@@ -49,9 +49,33 @@ const authorizeFn = async ({teamId}) => {
 const receiver = new ExpressReceiver({ signingSecret: process.env.SLACK_SIGNING_SECRET, endpoints: '/slack/events' });
 
 // command endpoints
-receiver.app.get('/test', (req, res) => {  testFn(); res.json({"fn":"test"}); });
-receiver.app.get('/trigger-prompt', (req, res) => { triggerPrompt(); res.json({"fn":"trigger-prompt"}); });
-receiver.app.get('/trigger-exhibition', (req, res) => { triggerExhibition(); res.json({"fn":"trigger-exhibition"}); });
+receiver.app.get('/test', (req, res) => {  
+  if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {
+    testFn(); 
+  
+    res.json({"fn":"test"}); 
+  } else {
+    res.sendStatus(401);
+  }
+});
+
+receiver.app.get('/trigger-prompt', (req, res) => { 
+  if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {  
+    triggerPrompt(); 
+    res.json({"fn":"trigger-prompt"}); 
+  } else {
+    res.sendStatus(401);
+  }                                                  
+});
+
+receiver.app.get('/trigger-exhibition', (req, res) => { 
+  if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {    
+    triggerExhibition(); 
+    res.json({"fn":"trigger-exhibition"}); 
+  } else {
+    res.sendStatus(401);
+  }     
+});
  
 const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET, receiver: receiver});
 // const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET});
@@ -1223,7 +1247,7 @@ app.message("cancel", async ({ message, say }) => {
  */
 
 const testFn = async () => {
-  console.log("TESTING!");
+  console.log("### TESTING ###");
   const teamIds = await stateGetTeamIds();
   
   for (const teamId of teamIds) {
@@ -1233,10 +1257,7 @@ const testFn = async () => {
     
     console.log(teamId, team.team_name, channels);
   }
-    
-  console.log("channels = ", channels);
-  
-  console.log("axios defaults = ", axios.defaults.headers);
+
   
   return true;
 }
