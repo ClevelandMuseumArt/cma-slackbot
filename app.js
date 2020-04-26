@@ -21,6 +21,9 @@ dotenv.config();
 const slackBotApiUrl = process.env['SLACK_BOT_API_URL'];
 const openaccessUrl = process.env['OPENACCESS_URL'];
 
+// authenticate
+axios.defaults.headers.common['Authentication'] = process.env['SLACK_BOT_API_TOKEN'];
+
 const getTokenData = async (teamId) => {
   const tokenUrl = `${slackBotApiUrl}tokens/${teamId}`;
   
@@ -70,7 +73,7 @@ var scheduledPromptTimeout; // setTimrout
  */
 
 // EVERYTHING REGARDING PROMPT GOES IN HERE
-var promptIndex = 3;
+var promptIndex = 0;
 var promptData = {
 };
 
@@ -1220,16 +1223,20 @@ app.message("cancel", async ({ message, say }) => {
  */
 
 const testFn = async () => {
+  console.log("TESTING!");
   const teamIds = await stateGetTeamIds();
   
   for (const teamId of teamIds) {
     var team = await stateGetTeamData(teamId)
+  
     var channels = await getBotChannels(team.bot_token, team.bot_user_id);
     
     console.log(teamId, team.team_name, channels);
   }
     
   console.log("channels = ", channels);
+  
+  console.log("axios defaults = ", axios.defaults.headers);
   
   return true;
 }
