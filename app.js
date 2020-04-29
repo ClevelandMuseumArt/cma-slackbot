@@ -434,10 +434,15 @@ async function triggerExhibition() {
   var teamIds = await stateGetTeamIds();
   
   for (const teamId of teamIds) {
-    if (hasExhibitParticipants(teamId)) {
-      await exhibitionMessage(teamId, 0); // with no additional delay
-    } else {
-      console.log("No exhibit participants for team ", teamId);
+    try {
+      if (hasExhibitParticipants(teamId)) {
+        await exhibitionMessage(teamId, 0); // with no additional delay
+      } else {
+        console.log("No exhibit participants for team ", teamId);
+      }
+    } catch (ex) {
+      console.log("!! COULDN'T TRIGGER EXHIBITION FOR TEAM ", teamId);
+      console.error(ex.message);
     }
   }
 }
@@ -802,7 +807,8 @@ async function exhibitionMessage(teamId, delayedMins) {
     for (var user of team.users) {
       if (user.current_state.lastImgUrl && user.current_state.lastImgTitle) {
         var name = "";
-        // get user name
+
+//         // get user name
         try {
           // Call the users.info method using the built-in WebClient
           // TODO: can't we just <@userId> in the markdown?
@@ -825,7 +831,7 @@ async function exhibitionMessage(teamId, delayedMins) {
         var artworkLabel =
           user.current_state.lastImgTitle +
           (user.current_state.lastImgCreator ? " by " + user.current_state.lastImgCreator : "");
-        var userResponse = `"` + textResponse + `" - ` + name;
+        var userResponse = `"${textResponse}" - ${name}`;
 
         // update user block
         var userBlocks = exhibit_template.blocks;
@@ -845,7 +851,7 @@ async function exhibitionMessage(teamId, delayedMins) {
           token: team.bot_token,
           text: " ",
           channel: channel.id, // find channel id or set current channel as post channel
-          post_at: scheduledTime + 2, // delay so the prompt comes first
+          post_at: scheduledTime + 10, // delay so the prompt comes first
           blocks: [],
           attachments: [{ blocks: userBlocks }]
         });
@@ -867,14 +873,19 @@ async function exhibitionMessage(teamId, delayedMins) {
       // The token you used to initialize your app is stored in the `context` object
       token: team.bot_token,
       channel: channel.id, // find channel id or set current channel as post channel
-      post_at: scheduledTime + 5, // delayed more for the ending message
+      post_at: scheduledTime + 12, // delayed more for the ending message
       blocks: [],
       attachments: [{ blocks: footerBlocks }],
       text: " "
     });   
     
     //send all users exhibition concluded message
-    await sendExhibitionStarted(teamId, scheduledTime + 5);
+    try {
+      await sendExhibitionStarted(teamId, scheduledTime+20);
+    } catch(ex) {
+      console.log("!! COULDNT SEND MESSAGES TO TEAM ", teamId);
+      console.error(ex.message);
+    }
     
     // Only clear data on success
     // TODO: ...do we want to rethink that
@@ -1159,7 +1170,6 @@ app.message("", async ({ message, payload, context, say }) => {
   if (user.awaitingArtworkSelection) {
     console.log("AM I EVEN HITTING THIS?");
     
-    
     // key confirmation, also links to a search on cma's website
     await say(
       "> " +
@@ -1251,11 +1261,20 @@ const testFn = async () => {
   const teamIds = await stateGetTeamIds();
   
   for (const teamId of teamIds) {
-    var team = await stateGetTeamData(teamId)
+    try {
+      var team = await stateGetTeamData(teamId)
   
-    var channels = await getBotChannels(team.bot_token, team.bot_user_id);
+      var channels = await getBotChannels(team.bot_token, team.bot_user_id);
     
-    console.log(teamId, team.team_name, channels);
+      console.log(teamId, team.team_name, channels);
+      
+      var users = await getAllUsersInTeamChannel(team);
+      console.log("channel users ", users);
+      console.log("team users ", team.users);
+    } catch (ex) {
+      console.log("!!! COULDN'T GET TEAM INFO FOR ", teamId);
+      console.error(ex.message);
+    }
   }
 
   
