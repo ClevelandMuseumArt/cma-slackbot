@@ -757,8 +757,11 @@ const testFn = async () => {
       console.log(teamId, team.team_name, channels);
       
       var users = await getAllUsersInTeamChannel(team);
+      var participants = team.users.filter(u => {return u.current_state && u.current_state.lastImgUrl});      
+      
       console.log("channel users ", users);
-      console.log("num participants ", team.users.length);
+      console.log("num participants ", participants.length);
+      console.log("prompt ", getPrompts());
     } catch (ex) {
       console.log("!!! COULDN'T GET TEAM INFO FOR ", teamId);
       console.error(ex.message);
