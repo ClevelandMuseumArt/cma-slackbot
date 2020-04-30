@@ -761,13 +761,12 @@ const testFn = async () => {
       
       console.log("channel users ", users);
       console.log("num participants ", participants.length);
-      console.log("prompt ", getPrompts());
     } catch (ex) {
       console.log("!!! COULDN'T GET TEAM INFO FOR ", teamId);
       console.error(ex.message);
     }
   }
-
+  console.log("prompt ", getPrompts());
   
   return true;
 }
