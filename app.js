@@ -1,7 +1,6 @@
 // This the cma slack bot prototype
 // Require the Bolt package (github.com/slackapi/bolt)
 const { App, ExpressReceiver } = require("@slack/bolt");
-// const { App } = require("@slack/bolt");
 const axios = require("axios");
 const dotenv = require("dotenv");
 const logts = require("log-timestamp");
@@ -10,8 +9,8 @@ const logts = require("log-timestamp");
 var exhibit_header_template = require("./exhibit_header_template.json");
 var exhibit_footer_template = require("./exhibit_footer_template.json");
 var exhibit_template = require("./exhibit_template.json");
+var exhibit_template2 = require("./exhibit_template2.json");
 var home_template = require("./app_home_template.json");
-// var prompt_invoke_template = require("./prompt_invoke_template.json");
 var prompt_invoke_template = require("./prompt_invoke_template_multi.json");
 var prompt_selection_template = require("./prompt_selection_template.json");
 var confirm_image_template = require("./confirm_image_template.json");
@@ -78,25 +77,12 @@ receiver.app.get('/trigger-exhibition', (req, res) => {
 });
  
 const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET, receiver: receiver});
-// const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET});
-
-// scheduling varaibles
-const secondsInADay = 86400;
-const intervalOfScheduledExhibit = secondsInADay; //in seconds
-var exhibitScheduled = false;
-var scheduledPromptLocalDate; // TODO: needs to be updated in the intervals
-var scheduledExhibitLocalDate; // TODO: needs to be updated in the intervals
-var scheduledExhibitInterval; // setInterval
-var scheduledPromptInterval; // setInterval
-var scheduledExhibitTimeout; // setTimeout
-var scheduledPromptTimeout; // setTimrout
-
 
 /*
  * FUNCTIONS
  */
 
-// EVERYTHING REGARDING PROMPT GOES IN HERE
+// PROMPT FUNCTIONS
 var promptIndex = 0;
 var promptData = {
 };
@@ -144,7 +130,7 @@ const initializePromptData = () => {
 
 // END PROMPT FUNCTIONS
 
-// EVERYTHING REGARDING STATE GOES IN HERE
+// STATE API FUNCTIONS
 
 const stateGetTeamIds = async () => {
   const url = `${slackBotApiUrl}team_ids`;
@@ -226,7 +212,7 @@ const stateClearUserData = async (teamId) => {
   }
 }
 
-// END STATE FUNCTIONS
+// END STATE API FUNCTIONS
 
 const writeExhibitionToAPI = async (slackbotId, data) => {
   var req = {
@@ -276,14 +262,6 @@ function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-function getNextRndInteger(src, min, max) {
-  var out = Math.floor(Math.random() * (max - min)) + min;
-  while (src === out) {
-    out = Math.floor(Math.random() * (max - min)) + min;
-  }
-  return out;
-}
-
 async function getBotChannels(botToken, botUserId) {
   const result =  await app.client.users.conversations({
     token: botToken,
@@ -317,118 +295,6 @@ async function getAllUsersInTeamChannel(team) {
   return users;
 }
 
-function formatDate(date) {
-  return (
-    date.getFullYear() +
-    "/" +
-    (date.getMonth() + 1) +
-    "/" +
-    date.getDate() +
-    " " +
-    date.getHours() +
-    ":" +
-    date.getMinutes()
-  );
-}
-
-function getUserDate(tz_offset) {
-  // What is going on here? - EH
-
-  var d = new Date();
-  var withUserOffset = d.getTime() / 1000 + tz_offset;
-  return new Date(withUserOffset * 1000);
-}
-
-async function calculateScheduledDate(
-  userId,
-  context,
-  say,
-  hoursOfTheDay,
-  offsetInMinutes
-) {
-  // var d = new Date();
-  var tz_offset = 0.0;
-
-  // to get user info so we can access their timezone offset user.tz_offset
-  try {
-    // Call the users.info method using the built-in WebClient
-    const result = await app.client.users.info({
-      // The token you used to initialize your app is stored in the `context` object
-      token: context.botToken,
-      // Call users.info for the user that joined the workspace
-      user: userId
-    });
-    tz_offset = result.user.tz_offset;
-    console.log(
-      `timezone offset for ${result.user.name} is ${result.user.tz_offset}`
-    );
-  } catch (error) {
-    console.error(error);
-  }
-
-  var userDate = getUserDate(tz_offset);
-  var proposedDate = new Date();
-  console.log(userDate); // finally we get the local time for user
-  var formattedDate = formatDate(userDate);
-  //await say(`Your time is ${formattedDate}`);
-
-  // DEV time adjustment
-  var proposedHourOfTheDay = hoursOfTheDay;
-  proposedDate.setHours(proposedHourOfTheDay);
-  proposedDate.setMinutes(offsetInMinutes);
-  proposedDate.setSeconds(0);
-
-  // WARNING: comment out this section if you want to test stuff
-  //comparing the proposed date with the actual date
-  //advance 24 hours if proposed time is in the past
-  // if (proposedDate.getTime() / 1000 - tz_offset < Date.now() / 1000) {
-  //   var epochProposed = proposedDate.getTime() / 1000.0;
-  //   epochProposed += secondsInADay; //24hours in seconds
-  //   proposedDate = new Date(epochProposed * 1000);
-  // }
-
-  // go back 24 hours if proposed time is way ahead - due to time zone issues
-  if (
-    proposedDate.getTime() / 1000 - tz_offset - secondsInADay >
-    Date.now() / 1000
-  ) {
-    var epochProposed = proposedDate.getTime() / 1000.0;
-    epochProposed -= secondsInADay; //24hours in seconds
-    proposedDate = new Date(epochProposed * 1000);
-  }
-
-  // format to notify user of the choice
-  var formattedLocalProposedDate = formatDate(proposedDate); // this is in user's local time
-
-  if (say) {
-    await say(`Next schedule happens on ${formattedLocalProposedDate}.`);
-  }
-
-  // save for global access
-  scheduledExhibitLocalDate = formatDate(proposedDate);
-
-  // this should be fed to the scheduled message
-  var nextScheduleDate = new Date(
-    (proposedDate.getTime() / 1000 - tz_offset) * 1000
-  );
-  console.log(`scheduled on: ${nextScheduleDate}. gmt time is: ${Date()} `);
-
-  return nextScheduleDate;
-}
-
-async function triggerFirstExhibit(context) {
-  console.log("first scheduled exhibit");
-  
-  var teamIds = await stateGetTeamIds();
-  
-  for (const teamId of teamIds) {
-    if (hasExhibitParticipants(teamId)) {
-      await exhibitScheduledMessage(teamId, context, 0); // with no additional delay
-    } else {
-      console.log("No exhibit participants for team ", teamId);
-    }
-  }
-}
 
 async function triggerExhibition() {
   var teamIds = await stateGetTeamIds();
@@ -447,25 +313,6 @@ async function triggerExhibition() {
   }
 }
 
-async function triggerFirstPrompt(channel_id) {
-  var teamIds = await stateGetTeamIds();  
-  
-  for (const teamId of teamIds) { 
-    var team = await stateGetTeamData(teamId);
-    
-    // we have the option to just loop through users who participated
-    var users = await getAllUsersInTeamChannel(team);
-    
-    if (users.length == 0) {
-      console.log(`No channel assigned, skipping prompts for  ${teamId}`);
-    }
-    
-    for (const user of users) {
-      // use userid as channel id to dm
-      await promptInvoke(user, teamId, user);
-    }
-  }
-}
 
 async function triggerPrompt() {
   var teamIds = await stateGetTeamIds();  
@@ -487,244 +334,12 @@ async function triggerPrompt() {
   }
 }
 
-// to reuse by command or app_home
-//TODO: DO WE NEED 'say'?
-async function exhibitSchedule(context, say, userId, inputHour, inputMinute) {
-  clearInterval(scheduledPromptInterval);
-  clearTimeout(scheduledPromptTimeout);
-
-  console.log(
-    `Set daily exhibition time at ${inputHour} hours, ${inputMinute} minutes`
-  );
-
-  console.dir(`cma daily schedule command by user: ${userId}`);
-
-  var nextScheduleDate = await calculateScheduledDate(
-    userId,
-    context,
-    say,
-    inputHour,
-    inputMinute
-  );
-  var current = new Date();
-  var timeDifference = nextScheduleDate.getTime() - current.getTime();
-
-  // trigger the first exhibit, then the exhibit will keep the interval running
-  scheduledExhibitTimeout = setTimeout(function() {
-    triggerFirstExhibit(context);
-  }, timeDifference); // pass context to async function
-}
-
-// to reuse by command or app_home
-async function promptSchedule(
-  context,
-  say,
-  channelId,
-  userId,
-  inputHour,
-  inputMinute
-) {
-  var imChannelId = channelId;
-
-  clearInterval(scheduledPromptInterval);
-  clearTimeout(scheduledPromptTimeout);
-
-  console.log(
-    `Set daily prompt time at ${inputHour} hours, ${inputMinute} minutes`
-  );
-
-  console.dir(`cma daily prompt command by user: ${userId}`);
-
-  var nextScheduleDate = await calculateScheduledDate(
-    userId,
-    context,
-    say,
-    inputHour,
-    inputMinute
-  );
-  var current = new Date();
-  var timeDifference = nextScheduleDate.getTime() - current.getTime();
-
-  // trigger the first exhibit, then the exhibit will keep the interval running
-  scheduledPromptTimeout = setTimeout(function() {
-    triggerFirstPrompt(imChannelId, context);
-  }, timeDifference); // pass context to async function
-}
-
-async function exhibitScheduledMessage(teamId, context, delayedMins) {
-  const team = await stateGetTeamData(teamId);
-  const channels = await getBotChannels(team.bot_token, team.bot_user_id);
-  
-  if (channels.length == 0) {
-    console.log(`No channel assigned, skipping exhibition for  ${teamId}`);
-    return;
-  }
-  
-  const channel = channels[0];
-
-  // just get delayed reponse
-  delayedMins += 0.2; // to safe guard if delayedMins were 0;
-  const secondsSinceEpoch = Date.now() / 1000;
-  var scheduledTime = secondsSinceEpoch + delayedMins * 60.0; // 10 sec from now
-  console.log("current time " + secondsSinceEpoch);
-  console.log("delayed to time"  + scheduledTime);
-  console.log(`SEND TO CHANNEL ${channel.name}`);
-
-  // prompt variables
-  var prompts = getPrompts();
-
-  // talking to api
-  var slackbotId = `id-${teamId}-${channel.id}-${scheduledTime}`;
-  var data = {
-    state: team
-  };
-
-  await writeExhibitionToAPI(slackbotId, data);
-
-  // update header block
-  var headerBlocks = exhibit_header_template.blocks;
-  
-  // replace with correct content
-  for (var i = 0; i < headerBlocks.length; i++) {
-    if (headerBlocks[i].block_id === "header_title") {
-      headerBlocks[i].text.text = "*" + prompts.title + "*";
-    }
-    if (headerBlocks[i].block_id === "header_credits") {
-      var creditString = "";
-      
-      for (var user of team.users) {
-        if (user.current_state.textResponse && user.current_state.textResponse != "") {
-          creditString = creditString.concat(`<@${user.user_id}>, `);
-        }
-      }
-
-      // insert credits if user response exists
-      if (creditString != "") {
-        headerBlocks[i].text.text =
-          "Today's exhibition is curated by " +
-          creditString +
-          "and the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
-      } else {
-        headerBlocks[i].text.text =
-          "Today's exhibition is curated by the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
-      }
-    }
-    if (headerBlocks[i].block_id === "header_prompt") {
-      headerBlocks[i].text.text = prompts.resultPrompt;
-    }
-    if (headerBlocks[i].block_id === "header_image") {
-      // headerBlocks[i].title.text = prompts.promptArtTitle;
-      headerBlocks[i].image_url = prompts.promptArtImageUrl;
-      headerBlocks[i].alt_text = prompts.promptArtTitle;
-    }
-    // TODO: This pushes everything below fold...figure this out
-    // if (userBlocks[i].block_id === "cma_button") {
-    //         userBlocks[i].elements[0].url = artworkUrl; //cma website
-    //       }
-  }
-  
-  try {
-    // the delayed opening statement
-    // Call the chat.scheduleMessage method with a token
-    const result = await app.client.chat.scheduleMessage({
-      token: team.bot_token,
-      channel: channel.id, 
-      post_at: scheduledTime,
-      blocks: [],
-      attachments: [{ blocks: headerBlocks }],
-      text: " "
-    });
-
-    for (var user of team.users) {
-      if (user.current_state.lastImgUrl && user.current_state.lastImgTitle) {
-        var name = "";
-        // get user name
-        try {
-          // Call the users.info method using the built-in WebClient
-          // TODO: can't we just <@userId> in the markdown?
-          const result = await app.client.users.info({
-            // The token you used to initialize your app is stored in the `context` object
-            token: team.bot_token,
-            // Call users.info for the user that joined the workspace
-            user: user.user_id
-          });
-
-          name = result.user.name;
-        } catch (error) {
-          console.error(error);
-        }
-
-        var artworkImg = user.current_state.lastImgUrl;
-        var artworkUrl = user.current_state.artworkUrl;
-        var textResponse = user.current_state.textResponse;
-
-        var artworkLabel =
-          user.current_state.lastImgTitle +
-          (user.current_state.lastImgCreator ? " by " + user.current_state.lastImgCreator : "");
-        var userResponse = `"` + textResponse + `" - ` + name;
-
-        // update user block
-        var userBlocks = exhibit_template.blocks;
-        // replace with correct content
-        for (var i = 0; i < userBlocks.length; i++) {
-          if (userBlocks[i].block_id === "artwork_label") {
-            userBlocks[i].title.text = userResponse;
-            userBlocks[i].alt_text = artworkLabel;
-            userBlocks[i].image_url = artworkImg;
-          }
-          if (userBlocks[i].block_id === "cma_button") {
-            userBlocks[i].elements[0].url = artworkUrl; //cma website
-          }
-        }
-        const result = await app.client.chat.scheduleMessage({
-          // The token you used to initialize your app is stored in the `context` object
-          token: team.bot_token,
-          text: " ",
-          channel: channel.id, // find channel id or set current channel as post channel
-          post_at: scheduledTime + 2, // delay so the prompt comes first
-          blocks: [],
-          attachments: [{ blocks: userBlocks }]
-        });
-      }
-    }
-
-    // update footer block
-    var footerBlocks = exhibit_footer_template.blocks;
-    // replace with correct content
-    for (var i = 0; i < footerBlocks.length; i++) {
-      if (footerBlocks[i].block_id === "footer_title") {
-        footerBlocks[i].text.text = prompts.resultPromptConclusion;
-      }
-    }
-    
-    // the delayed end statement
-    // Call the chat.scheduleMessage method with a token
-    const endResult = await app.client.chat.scheduleMessage({
-      // The token you used to initialize your app is stored in the `context` object
-      token: team.bot_token,
-      channel: channel.id, // find channel id or set current channel as post channel
-      post_at: scheduledTime + 5, // delayed more for the ending message
-      blocks: [],
-      attachments: [{ blocks: footerBlocks }],
-      text: " "
-    });   
-    
-    //send all users exhibition concluded message
-    await sendExhibitionStarted(teamId, scheduledTime + 5);
-    
-    // Only clear data on success
-    // TODO: ...do we want to rethink that
-    await stateClearUserData(teamId);    
-  } catch (error) {
-    console.error(error);
-  }
-}
 
 async function exhibitionMessage(teamId, delayedMins) {
   const team = await stateGetTeamData(teamId);
   const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   
-  if (channels.length == 0) {
+  if (channels.length == 0 || team.users.length == 0) {
     console.log(`No channel assigned, skipping exhibition for  ${teamId}`);
     return;
   }
@@ -795,27 +410,28 @@ async function exhibitionMessage(teamId, delayedMins) {
   try {
     // the delayed opening statement
     // Call the chat.scheduleMessage method with a token
-    const result = await app.client.chat.scheduleMessage({
+    const result = await app.client.chat.postMessage({
       token: team.bot_token,
       channel: channel.id, 
-      post_at: scheduledTime,
       blocks: [],
       attachments: [{ blocks: headerBlocks }],
       text: " "
     });
 
+    var tempAllUserBlocks = [];
+    var allUserBlocks = [];
+    
     for (var user of team.users) {
+      
       if (user.current_state.lastImgUrl && user.current_state.lastImgTitle) {
         var name = "";
 
-//         // get user name
+        // get user name
         try {
           // Call the users.info method using the built-in WebClient
           // TODO: can't we just <@userId> in the markdown?
           const result = await app.client.users.info({
-            // The token you used to initialize your app is stored in the `context` object
             token: team.bot_token,
-            // Call users.info for the user that joined the workspace
             user: user.user_id
           });
 
@@ -834,30 +450,59 @@ async function exhibitionMessage(teamId, delayedMins) {
         var userResponse = `"${textResponse}" - ${name}`;
 
         // update user block
-        var userBlocks = exhibit_template.blocks;
-        // replace with correct content
-        for (var i = 0; i < userBlocks.length; i++) {
-          if (userBlocks[i].block_id === "artwork_label") {
-            userBlocks[i].title.text = userResponse;
-            userBlocks[i].alt_text = artworkLabel;
-            userBlocks[i].image_url = artworkImg;
-          }
-          if (userBlocks[i].block_id === "cma_button") {
-            userBlocks[i].elements[0].url = artworkUrl; //cma website
-          }
+        var userBlocks = exhibit_template2.blocks;
+
+        userBlocks[1].title.text = userResponse;
+        userBlocks[1].alt_text = artworkLabel;
+        userBlocks[1].image_url = artworkImg;
+        userBlocks[2].elements[0].url = artworkUrl; //cma website
+
+        // the totally stupid way you have to pass by value in JS
+        var blockValue = JSON.parse(JSON.stringify(userBlocks));
+        tempAllUserBlocks = allUserBlocks.concat(blockValue);
+        
+        // IMPORTANT: make sure concatenated blocks don't exceed 4000 char message limit
+        if (JSON.stringify(tempAllUserBlocks).length < 4000) {
+          allUserBlocks = tempAllUserBlocks;         
+        } else { // else send message, clear block data and start building new message
+          console.log("SEND EXHIBITION MESSAGE ");
+          
+          try {
+            const resultUserBlocks = await app.client.chat.postMessage({
+              token: team.bot_token,
+              text: " ",
+              channel: channel.id, 
+              blocks: allUserBlocks
+            }).then(() => {
+              tempAllUserBlocks = [];
+              allUserBlocks = blockValue;                      
+            });          
+          } catch(ex) {
+            console.log("error at block for user ", user.user_id);
+            console.error(ex.message);
+          } 
         }
-        const result = await app.client.chat.scheduleMessage({
-          // The token you used to initialize your app is stored in the `context` object
-          token: team.bot_token,
-          text: " ",
-          channel: channel.id, // find channel id or set current channel as post channel
-          post_at: scheduledTime + 10, // delay so the prompt comes first
-          blocks: [],
-          attachments: [{ blocks: userBlocks }]
-        });
       }
     }
-
+    
+    // send any leftovers...if any
+    if (allUserBlocks.length > 0) {
+      try {
+        const resultUserBlocks = await app.client.chat.postMessage({
+          token: team.bot_token,
+          text: " ",
+          channel: channel.id, 
+          blocks: allUserBlocks
+      }).then(() => {
+        tempAllUserBlocks = [];
+          allUserBlocks = blockValue;                      
+        });          
+      } catch(ex) {
+        console.log("error at block for user ", user.user_id);
+        console.error(ex.message);
+      } 
+    }
+    
     // update footer block
     var footerBlocks = exhibit_footer_template.blocks;
     // replace with correct content
@@ -867,13 +512,9 @@ async function exhibitionMessage(teamId, delayedMins) {
       }
     }
     
-    // the delayed end statement
-    // Call the chat.scheduleMessage method with a token
-    const endResult = await app.client.chat.scheduleMessage({
-      // The token you used to initialize your app is stored in the `context` object
+    const endResult = await app.client.chat.postMessage({
       token: team.bot_token,
-      channel: channel.id, // find channel id or set current channel as post channel
-      post_at: scheduledTime + 12, // delayed more for the ending message
+      channel: channel.id, 
       blocks: [],
       attachments: [{ blocks: footerBlocks }],
       text: " "
@@ -902,24 +543,29 @@ async function sendExhibitionStarted(teamId, scheduledTime) {
   const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   
   for (const user of team.users) {
-    const intro = await app.client.chat.scheduleMessage({
-        token: team.bot_token,
-        channel: user.current_state.chatChannelId,
-        post_at: scheduledTime,
-        blocks: [
-          {
-            "block_id": "exhibition_concluded_msg",
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": `> *Today's exhibition has started on the #${channels[0].name} channel*`
-            }
-          }        
-        ],
-        // Text in the notification
-        text: "Today's exhibition has started"
-      }); 
-    console.log("SEND STARTED TO ", user.current_state.chatChannelId);
+    try {
+      const intro = await app.client.chat.scheduleMessage({
+          token: team.bot_token,
+          channel: user.current_state.chatChannelId,
+          post_at: scheduledTime,
+          blocks: [
+            {
+              "block_id": "exhibition_concluded_msg",
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": `> *Today's exhibition has started on the #${channels[0].name} channel*`
+              }
+            }        
+          ],
+          // Text in the notification
+          text: "Today's exhibition has started"
+        }); 
+      console.log("SEND STARTED TO ", user.current_state.chatChannelId);
+    } catch(ex) {
+      console.log("!! COULDN'T SEND EXHIBITION MESSAGE TO ", user.user_id);
+      console.error(ex.message);
+    }
   }  
 }
 
@@ -936,7 +582,7 @@ async function promptInvoke(channelId, teamId, userId) {
       awaitingQueryText: true
     };
   
-  stateSetUserData(userId, currentState, teamId);
+  const user = await stateSetUserData(userId, currentState, teamId);
 
   // variables (to be updated dynamically)
   var prompts = getPrompts();
@@ -991,12 +637,9 @@ async function promptInvoke(channelId, teamId, userId) {
 
     const result = await app.client.chat.postMessage({
       token: team.bot_token,
-      // Channel to send message to
       channel: channelId,
-      // Main art selection interaction
       blocks: [],
       attachments: [{ blocks: promptInvokeBlocks }],
-      // Text in the notification
       text: " "
     });
   } catch (error) {
@@ -1011,10 +654,7 @@ async function wordSelection(word, userId, botToken) {
   
   const intro = await app.client.chat.postMessage({
       token: botToken,
-      // Channel to send message to
-      // channel: getUserData(userId).chatChannelId,
       channel: user.chatChannelId,
-      // Main art selection interaction
       blocks: [
         {
           "block_id": "prompt_intro",
@@ -1025,10 +665,9 @@ async function wordSelection(word, userId, botToken) {
           }
         }        
       ],
-      // Text in the notification
       text: " "
     });  
-  // // await to get results
+
   const artObjects = getArts(word);
   
   var targetIndex = getRndInteger(0, artObjects.length - 1);
@@ -1078,16 +717,12 @@ async function wordSelection(word, userId, botToken) {
     }
   }
 
-  // create a block
   try {
     const result = await app.client.chat.postMessage({
       token: botToken,
-      // Channel to send message to
       channel: user.chatChannelId,
-      // Main art selection interaction
       blocks: [],
       attachments: [{ blocks: promptSelectionBlocks }],
-      // Text in the notification
       text: " "
     });
   } catch (error) {
@@ -1100,6 +735,33 @@ async function getIfAdmin(userId, context) {
   
   return (process.env.ADMIN_USERS.split('|').includes(userId));
 }
+
+
+const testFn = async () => {
+  console.log("### TESTING ###");
+  const teamIds = await stateGetTeamIds();
+  
+  for (const teamId of teamIds) {
+    try {
+      var team = await stateGetTeamData(teamId)
+  
+      var channels = await getBotChannels(team.bot_token, team.bot_user_id);
+    
+      console.log(teamId, team.team_name, channels);
+      
+      var users = await getAllUsersInTeamChannel(team);
+      console.log("channel users ", users);
+      console.log("num participants ", team.users.length);
+    } catch (ex) {
+      console.log("!!! COULDN'T GET TEAM INFO FOR ", teamId);
+      console.error(ex.message);
+    }
+  }
+
+  
+  return true;
+}
+
 
 /*
  * MESSAGE HANDLERS
@@ -1121,6 +783,7 @@ app.message("", async ({ message, payload, context, say }) => {
   }
   
   // verbose for testing
+  // TODO: don't need to escape ALL user input
   var rawUserInput = message.text;
   var escapedInput = rawUserInput.replace(
     /[\`\#\;\%\$\@\!\*\+\-\=\<\>\&\|\(\)\[\]\{\}\^\~\?\:\\/"]/g,
@@ -1128,7 +791,6 @@ app.message("", async ({ message, payload, context, say }) => {
   );
   console.log(`escaped user input: ${escapedInput}`);
 
-  // check if user is admin
   var isAdmin = await getIfAdmin(userId, context);
 
   // cancel
@@ -1252,186 +914,6 @@ app.message("cancel", async ({ message, say }) => {
   await say(`Your selection have been canceled.`);
 });
 
-/*
- * SLASH COMMANDS
- */
-
-const testFn = async () => {
-  console.log("### TESTING ###");
-  const teamIds = await stateGetTeamIds();
-  
-  for (const teamId of teamIds) {
-    try {
-      var team = await stateGetTeamData(teamId)
-  
-      var channels = await getBotChannels(team.bot_token, team.bot_user_id);
-    
-      console.log(teamId, team.team_name, channels);
-      
-      var users = await getAllUsersInTeamChannel(team);
-      console.log("channel users ", users);
-      console.log("team users ", team.users);
-    } catch (ex) {
-      console.log("!!! COULDN'T GET TEAM INFO FOR ", teamId);
-      console.error(ex.message);
-    }
-  }
-
-  
-  return true;
-}
-
-app.command("/cma_test", async ({ ack, payload, context, command }) => {
-  // Acknowledge the command request
-  ack();
-  
-  testFn();
-});
-
-// invoke cma prompt for demo
-// Listen for invoking cma prompt
-app.command("/cma_invoke", async ({ ack, payload, context, command }) => {
-  // Acknowledge the command request
-  ack();
-
-  await promptInvoke(payload.channel_id, payload.team_id, payload.user_id);
-});
-
-// schedule the prompt daily hour
-// Listen for a slash command invocation
-app.command(
-  "/cma_daily_prompt_time",
-  async ({ ack, payload, context, say, command }) => {
-    var teamId = payload.team_id;
-    var userId = payload.user_id;
-
-    var team = stateGetTeamData(teamId);
-    
-    // Acknowledge the command request
-    ack();
-
-    //// check if user is admin
-    var isAdmin = await getIfAdmin(payload.user_id, context);
-
-    if (!isAdmin){
-      await say("Sorry, only an admin can do this");
-      return;
-    }
-
-    var input = command.text.split(":");
-
-    var inputHour = parseFloat(input[0]);
-    var inputMinute = parseFloat(input[1]);
-
-    // make sure to curb the numbers
-    if (inputHour < 0 || inputHour > 24) {
-      await say(`Please try again with a number between 0 and 24.`);
-      return;
-    }
-
-    await promptSchedule(
-      context,
-      say,
-      team.channelId,
-      userId,
-      inputHour,
-      inputMinute
-    );
-  }
-);
-
-// schedule the exhibit daily hour
-// Listen for a slash command invocation
-app.command(
-  "/cma_daily_exhibit_time",
-  async ({ ack, payload, context, say, command }) => {
-    var userId = payload.user_id;
-    var teamId = payload.team_id;
- 
-    // Acknowledge the command request
-    ack();
-
-    clearInterval(scheduledExhibitInterval);
-    clearTimeout(scheduledExhibitTimeout);
-
-    //// check if user is admin
-    var isAdmin = await getIfAdmin(payload.user_id, context);
-
-    if (!isAdmin){
-      await say("Sorry, only an admin can do this");
-      return;
-    }
-
-    var input = command.text.split(":");
-    var inputHour = parseFloat(input[0]);
-    var inputMinute = parseFloat(input[1]);
-
-    // make sure to curb the numbers
-    if (inputHour < 0 || inputHour > 24) {
-      await say(`Please try again with a number between 0 and 24.`);
-      return;
-    }
-
-    await exhibitSchedule(context, say, userId, inputHour, inputMinute);
-  }
-);
-
-// schedule the exhibit, currently just adding delay, can expand from here
-// Listen for a slash command invocation
-app.command(
-  "/cma_schedule_exhibit",
-  async ({ ack, payload, context, say, command }) => {
-    var teamId = payload.team_id;
-    
-    // Acknowledge the command request
-    ack();
-
-    //// check if user is admin
-    var isAdmin = await getIfAdmin(payload.user_id, context);
-
-    if (!isAdmin){
-      await say("Sorry, only an admin can do this");
-      return;
-    }
-
-    // schedule for a specific date
-    // var future = new Date(2010, 6, 26).getTime() / 1000
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date
-
-    var delayedMins = command.text ? parseFloat(command.text) : 0.2;
-    await exhibitScheduledMessage(teamId, context, delayedMins);
-  }
-);
-
-// schedule the exhibit daily hour
-// Listen for a slash command invocation
-app.command(
-  "/cma_cancel_exhibits",
-  async ({ ack, payload, context, say, command }) => {
-    // Acknowledge the command request
-    ack();
-
-    //// check if user is admin
-    var isAdmin = await getIfAdmin(payload.user_id, context);
-
-    if (!isAdmin){
-      await say("Sorry, only an admin can do this");
-      return;
-    }
-
-    try {
-      await say(`Daily exhibit and prompt schedule have been canceled.`);
-      // clear the interval
-      clearInterval(scheduledExhibitInterval);
-      clearInterval(scheduledPromptInterval);
-      clearTimeout(scheduledExhibitTimeout);
-      clearTimeout(scheduledPromptTimeout);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-);
-
 
 /*
  * ACTIONS
@@ -1460,7 +942,6 @@ for (var i = 0; i < numChoices; i++) {
 }
 
 // Listen for a button invocation with action_id `visit_button`
-// You must set up a Request URL under Interactive Components on your app configuration page
 app.action("visit_button", async ({ ack, body, context }) => {
   // Acknowledge the button request
   ack();
@@ -1469,7 +950,6 @@ app.action("visit_button", async ({ ack, body, context }) => {
 });
 
 // Listen for a button invocation with action_id `shuffle_button`
-// You must set up a Request URL under Interactive Components on your app configuration page
 app.action("shuffle_button", async ({ ack, body, context }) => {
   var userId = body.user.id;
   
@@ -1606,77 +1086,12 @@ app.action("confirm_button", async ({ ack, body, context }) => {
     // Update the message
     const result = await app.client.chat.update({
       token: context.botToken,
-      // ts of message to update
       ts: body.message.ts,
-      // Channel of message
       channel: body.channel.id,
       blocks: [],
       attachments: [{ blocks: confirmImageBlocks }],
       text: " "
     });
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-
-// Listen for a button invocation with action_id `shuffle_button`
-// You must set up a Request URL under Interactive Components on your app configuration page
-app.action("prompt_time_selection", async ({ ack, payload, body, context }) => {
-  var userId = body.user.id;
-  var teamId = body.team.id;
-  
-  var team = stateGetTeamData(teamId);
-  
-  // Acknowledge the button request
-  ack();
-
-  try {
-    var inputHour = body.actions[0].selected_option.value;
-    var inputMinute = 0;
-    // we have no channel id to send here
-    await promptSchedule(
-      context,
-      void 0,
-      team.channelId,
-      userId,
-      inputHour,
-      inputMinute
-    );
-
-    var homeBlocks = home_template.blocks;
-
-    // iterate over each element in the array
-    for (var i = 0; i < homeBlocks.length; i++) {
-      // look for the entry with a matching `code` value
-      if (homeBlocks[i].block_id === "prompt_time") {
-        homeBlocks[i].text.text = scheduledExhibitLocalDate;
-      }
-    }
-
-    console.dir(homeBlocks);
-
-    try {
-      /* view.publish is the method that your app uses to push a view to the Home tab */
-      const result = await app.client.views.publish({
-        /* retrieves your xoxb token from context */
-        token: context.botToken,
-
-        /* the user that opened your app's app home */
-        user_id: userId,
-
-        /* the view payload that appears in the app home*/
-        view: {
-          type: "home",
-          callback_id: "home_view",
-
-          /* body of the view */
-          blocks: homeBlocks
-        }
-      });
-    } catch (error) {
-      console.error(error);
-    }
   } catch (error) {
     console.error(error);
   }
@@ -1746,7 +1161,6 @@ app.event("app_home_opened", async ({ context, event, say }) => {
   // Start your app
   await app.start(process.env.PORT || 3000);
   
-  // initialize state
   promptData = initializePromptData(); 
   
   console.log("⚡️ Bolt app is running!");
