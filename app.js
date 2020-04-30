@@ -8,7 +8,6 @@ const logts = require("log-timestamp");
 // block templates
 var exhibit_header_template = require("./exhibit_header_template.json");
 var exhibit_footer_template = require("./exhibit_footer_template.json");
-var exhibit_template = require("./exhibit_template.json");
 var exhibit_template2 = require("./exhibit_template2.json");
 var home_template = require("./app_home_template.json");
 var prompt_invoke_template = require("./prompt_invoke_template_multi.json");
@@ -37,7 +36,7 @@ const getTokenData = async (teamId) => {
 
 const authorizeFn = async ({teamId}) => {
   const results = await getTokenData(teamId);
-
+  
   return {
     botToken: results.botToken,
     botId: results.botId,
@@ -298,44 +297,53 @@ async function getAllUsersInTeamChannel(team) {
 
 async function triggerExhibition() {
   var teamIds = await stateGetTeamIds();
-  
-  for (const teamId of teamIds) {
-    try {
-      if (hasExhibitParticipants(teamId)) {
-        await exhibitionMessage(teamId, 0); // with no additional delay
-      } else {
-        console.log("No exhibit participants for team ", teamId);
+
+  teamIds.forEach(async (teamId, i) => {
+    setTimeout(async () => {
+      try {
+        if (hasExhibitParticipants(teamId)) {
+          await exhibitionMessage(teamId);
+        } else {
+          console.log("No exhibit participants for team ", teamId);
+        }
+      } catch (ex) {
+        console.log("!! COULDN'T TRIGGER EXHIBITION FOR TEAM ", teamId);
+        console.error(ex.message);
       }
-    } catch (ex) {
-      console.log("!! COULDN'T TRIGGER EXHIBITION FOR TEAM ", teamId);
-      console.error(ex.message);
-    }
-  }
+    }, 5000*i); // 5 second delay between teams
+  });
 }
 
 
 async function triggerPrompt() {
   var teamIds = await stateGetTeamIds();  
   
-  for (const teamId of teamIds) { 
-    var team = await stateGetTeamData(teamId);
-    
-    // we have the option to just loop through users who participated
-    var users = await getAllUsersInTeamChannel(team);
-    
-    if (users.length == 0) {
-      console.log(`No channel assigned, skipping prompts for  ${teamId}`);
-    }
-    
-    for (const user of users) {
-      // use userid as channel id to dm
-      await promptInvoke(user, teamId, user);
-    }
-  }
+  teamIds.forEach(async (teamId, i) => {
+    setTimeout(async () => {
+      try {    
+        var team = await stateGetTeamData(teamId);
+
+        // we have the option to just loop through users who participated
+        var users = await getAllUsersInTeamChannel(team);
+
+        if (users.length == 0) {
+          console.log(`No channel assigned, skipping prompts for  ${teamId}`);
+        }
+
+        for (const user of users) {
+          // use userid as channel id to dm
+          await promptInvoke(user, teamId, user);
+        }
+      } catch (ex) {
+        console.log("!! COULDN'T TRIGGER EXHIBITION FOR TEAM ", teamId);
+        console.error(ex.message);
+      }        
+    }, 5000*i); // 5 second delay between teams
+  });
 }
 
 
-async function exhibitionMessage(teamId, delayedMins) {
+async function exhibitionMessage(teamId) {
   const team = await stateGetTeamData(teamId);
   const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   
@@ -346,19 +354,15 @@ async function exhibitionMessage(teamId, delayedMins) {
   
   const channel = channels[0];
 
-  // just get delayed reponse
-  delayedMins += 0.2; // to safe guard if delayedMins were 0;
   const secondsSinceEpoch = Date.now() / 1000;
-  var scheduledTime = secondsSinceEpoch + delayedMins * 60.0; // 10 sec from now
-  console.log("current time " + secondsSinceEpoch);
-  console.log("delayed to time"  + scheduledTime);
+
   console.log(`SEND TO CHANNEL ${channel.name}`);
 
   // prompt variables
   var prompts = getPrompts();
 
   // talking to api
-  var slackbotId = `id-${teamId}-${channel.id}-${scheduledTime}`;
+  var slackbotId = `id-${teamId}-${channel.id}-${secondsSinceEpoch}`;
   var data = {
     state: team
   };
@@ -408,8 +412,6 @@ async function exhibitionMessage(teamId, delayedMins) {
   }
   
   try {
-    // the delayed opening statement
-    // Call the chat.scheduleMessage method with a token
     const result = await app.client.chat.postMessage({
       token: team.bot_token,
       channel: channel.id, 
@@ -522,11 +524,13 @@ async function exhibitionMessage(teamId, delayedMins) {
     
     //send all users exhibition concluded message
     try {
-      await sendExhibitionStarted(teamId, scheduledTime+20);
+      await sendExhibitionStarted(teamId);
     } catch(ex) {
       console.log("!! COULDNT SEND MESSAGES TO TEAM ", teamId);
       console.error(ex.message);
     }
+    
+
     
     // Only clear data on success
     // TODO: ...do we want to rethink that
@@ -536,37 +540,38 @@ async function exhibitionMessage(teamId, delayedMins) {
   }
 }
 
-async function sendExhibitionStarted(teamId, scheduledTime) {
+async function sendExhibitionStarted(teamId) {
   console.log("Exhibition started message");
   
   const team = await stateGetTeamData(teamId);
   const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   
-  for (const user of team.users) {
-    try {
-      const intro = await app.client.chat.scheduleMessage({
-          token: team.bot_token,
-          channel: user.current_state.chatChannelId,
-          post_at: scheduledTime,
-          blocks: [
-            {
-              "block_id": "exhibition_concluded_msg",
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": `> *Today's exhibition has started on the #${channels[0].name} channel*`
-              }
-            }        
-          ],
-          // Text in the notification
-          text: "Today's exhibition has started"
-        }); 
-      console.log("SEND STARTED TO ", user.current_state.chatChannelId);
-    } catch(ex) {
-      console.log("!! COULDN'T SEND EXHIBITION MESSAGE TO ", user.user_id);
-      console.error(ex.message);
-    }
-  }  
+  team.users.forEach(async (user, i) => {  
+    setTimeout(async () => {
+      try {
+        const intro = await app.client.chat.postMessage({
+            token: team.bot_token,
+            channel: user.current_state.chatChannelId,
+            blocks: [
+              {
+                "block_id": "exhibition_concluded_msg",
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": `> *Today's exhibition has started on the #${channels[0].name} channel*`
+                }
+              }        
+            ],
+            // Text in the notification
+            text: "Today's exhibition has started"
+          }); 
+        console.log("SEND STARTED TO ", user.current_state.chatChannelId);
+      } catch(ex) {
+        console.log("!! COULDN'T SEND EXHIBITION MESSAGE TO ", user.user_id);
+        console.error(ex.message);
+      }
+    }, 500*i); // half-second delay between messages
+  });  
 }
 
 // this is where the prompt message is composed
@@ -816,10 +821,6 @@ app.message("", async ({ message, payload, context, say }) => {
     user.textResponse = rawUserInput;
 
     stateSetUserData(userId, user);
-    
-    // all responses were collected, scheduling message
-    const secondsSinceEpoch = Date.now() / 1000;
-    var scheduledTime = secondsSinceEpoch + 15; // 10 sec from now
 
     return;
   } else {
