@@ -4,6 +4,7 @@ const { App, ExpressReceiver } = require("@slack/bolt");
 const axios = require("axios");
 const dotenv = require("dotenv");
 const logts = require("log-timestamp");
+const retry = require("async-retry");
 
 // block templates
 var exhibit_header_template = require("./exhibit_header_template.json");
@@ -15,6 +16,12 @@ var prompt_selection_template = require("./prompt_selection_template.json");
 var confirm_image_template = require("./confirm_image_template.json");
 
 dotenv.config();
+
+const RETRY_OPTIONS = {
+  retries: 5,
+  minTimeout: 10000, // 10 sec 
+  maxTimeout: 30000 // 30 sec
+};
 
 const slackBotApiUrl = process.env['SLACK_BOT_API_URL'];
 const openaccessUrl = process.env['OPENACCESS_URL'];
@@ -530,8 +537,6 @@ async function exhibitionMessage(teamId) {
       console.error(ex.message);
     }
     
-
-    
     // Only clear data on success
     // TODO: ...do we want to rethink that
     await stateClearUserData(teamId);    
@@ -549,27 +554,29 @@ async function sendExhibitionStarted(teamId) {
   team.users.forEach(async (user, i) => {  
     setTimeout(async () => {
       try {
-        const intro = await app.client.chat.postMessage({
-            token: team.bot_token,
-            channel: user.current_state.chatChannelId,
-            blocks: [
-              {
-                "block_id": "exhibition_concluded_msg",
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": `> *Today's exhibition has started on the #${channels[0].name} channel*`
-                }
-              }        
-            ],
-            // Text in the notification
-            text: "Today's exhibition has started"
-          }); 
-        console.log("SEND STARTED TO ", user.current_state.chatChannelId);
+        const results = await retry(async () => {      
+          const intro = await app.client.chat.postMessage({
+              token: team.bot_token,
+              channel: user.current_state.chatChannelId,
+              blocks: [
+                {
+                  "block_id": "exhibition_concluded_msg",
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": `> *Today's exhibition has started on the #${channels[0].name} channel*`
+                  }
+                }        
+              ],
+              // Text in the notification
+              text: "Today's exhibition has started"
+            }); 
+          console.log("SEND STARTED TO ", i, user.current_state.chatChannelId);
+        }, RETRY_OPTIONS);
       } catch(ex) {
         console.log("!! COULDN'T SEND EXHIBITION MESSAGE TO ", user.user_id);
         console.error(ex.message);
-      }
+      }        
     }, 500*i); // half-second delay between messages
   });  
 }
@@ -657,22 +664,6 @@ async function wordSelection(word, userId, botToken) {
 
   var wordIntro = `> <https://www.clevelandart.org/art/collection/search?search=${word}|${word}>`;  
   
-  const intro = await app.client.chat.postMessage({
-      token: botToken,
-      channel: user.chatChannelId,
-      blocks: [
-        {
-          "block_id": "prompt_intro",
-          "type": "section",
-          "text": {
-            "type": "mrkdwn",
-            "text": wordIntro
-          }
-        }        
-      ],
-      text: " "
-    });  
-
   const artObjects = getArts(word);
   
   var targetIndex = getRndInteger(0, artObjects.length - 1);
@@ -723,15 +714,26 @@ async function wordSelection(word, userId, botToken) {
   }
 
   try {
-    const result = await app.client.chat.postMessage({
-      token: botToken,
-      channel: user.chatChannelId,
-      blocks: [],
-      attachments: [{ blocks: promptSelectionBlocks }],
-      text: " "
-    });
-  } catch (error) {
-    console.error(error);
+    const results = await retry(async () => {  
+      const msg = await app.client.chat.postMessage({
+        token: botToken,
+        channel: user.chatChannelId,
+        blocks: [  {
+              "block_id": "prompt_intro",
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": wordIntro
+              }
+            }  
+        ],
+        attachments: [{ blocks: promptSelectionBlocks }],
+        text: " "
+      });
+    }, RETRY_OPTIONS);
+  } catch (ex) {
+    console.log("!! couldn't select word for user ", userId);
+    console.error(ex.message);
   }
 }
 
@@ -966,6 +968,8 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   ) {
     return;
   }
+  
+  var wordIntro = `> <https://www.clevelandart.org/art/collection/search?search=${user.keyword}|${user.keyword}>`;  
 
   const artObjects = await getArts(user.keyword);
 
@@ -1015,17 +1019,24 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   }
 
   try {
-    // Update the message
-    const result = await app.client.chat.update({
-      token: context.botToken,
-      // ts of message to update
-      ts: body.message.ts,
-      // Channel of message
-      channel: body.channel.id,
-      blocks: [],
-      attachments: [{ blocks: promptSelectionBlocks }],
-      text: " "
-    });
+    const results = await retry(async () => {  
+      const msg = await app.client.chat.update({
+        token: context.botToken,
+        ts: body.message.ts,
+        channel: body.channel.id,
+        blocks: [{
+              "block_id": "prompt_intro",
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": wordIntro
+              }
+            }  
+        ],
+        attachments: [{ blocks: promptSelectionBlocks }],
+        text: " "
+      });
+    }, RETRY_OPTIONS);
   } catch (error) {
     console.error(error);
   }
@@ -1049,6 +1060,8 @@ app.action("confirm_button", async ({ ack, body, context }) => {
     return;
   }
 
+  var wordIntro = `> <https://www.clevelandart.org/art/collection/search?search=${user.keyword}|${user.keyword}>`;  
+  
   try {
     // reaffirm status
     //adding state
@@ -1085,19 +1098,29 @@ app.action("confirm_button", async ({ ack, body, context }) => {
     }
 
     // Update the message
-    const result = await app.client.chat.update({
-      token: context.botToken,
-      ts: body.message.ts,
-      channel: body.channel.id,
-      blocks: [],
-      attachments: [{ blocks: confirmImageBlocks }],
-      text: " "
-    });
-  } catch (error) {
-    console.error(error);
+    const results = await retry(async () => {  
+      const result = await app.client.chat.update({
+        token: context.botToken,
+        ts: body.message.ts,
+        channel: body.channel.id,
+        blocks: [{
+              "block_id": "prompt_intro",
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": wordIntro
+              }
+            }  
+        ],
+        attachments: [{ blocks: confirmImageBlocks }],
+        text: " "
+      });
+    }, RETRY_OPTIONS);
+  } catch (ex) {
+    console.log("!! error confirming artwork for ", userId);
+    console.error(ex);
   }
 });
-
 
 //onboarding
 app.event("app_home_opened", async ({ context, event, say }) => {
