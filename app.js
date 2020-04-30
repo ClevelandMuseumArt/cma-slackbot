@@ -10,6 +10,7 @@ const logts = require("log-timestamp");
 var exhibit_header_template = require("./exhibit_header_template.json");
 var exhibit_footer_template = require("./exhibit_footer_template.json");
 var exhibit_template = require("./exhibit_template.json");
+var exhibit_template2 = require("./exhibit_template2.json");
 var home_template = require("./app_home_template.json");
 // var prompt_invoke_template = require("./prompt_invoke_template.json");
 var prompt_invoke_template = require("./prompt_invoke_template_multi.json");
@@ -626,10 +627,9 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
   try {
     // the delayed opening statement
     // Call the chat.scheduleMessage method with a token
-    const result = await app.client.chat.scheduleMessage({
+    const result = await app.client.chat.postMessage({
       token: team.bot_token,
       channel: channel.id, 
-      post_at: scheduledTime,
       blocks: [],
       attachments: [{ blocks: headerBlocks }],
       text: " "
@@ -676,7 +676,7 @@ async function exhibitScheduledMessage(teamId, context, delayedMins) {
             userBlocks[i].elements[0].url = artworkUrl; //cma website
           }
         }
-        const result = await app.client.chat.scheduleMessage({
+        const result = await app.client.chat.postMessage({
           // The token you used to initialize your app is stored in the `context` object
           token: team.bot_token,
           text: " ",
@@ -724,7 +724,7 @@ async function exhibitionMessage(teamId, delayedMins) {
   const team = await stateGetTeamData(teamId);
   const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   
-  if (channels.length == 0) {
+  if (channels.length == 0 || team.users.length == 0) {
     console.log(`No channel assigned, skipping exhibition for  ${teamId}`);
     return;
   }
@@ -795,27 +795,28 @@ async function exhibitionMessage(teamId, delayedMins) {
   try {
     // the delayed opening statement
     // Call the chat.scheduleMessage method with a token
-    const result = await app.client.chat.scheduleMessage({
+    const result = await app.client.chat.postMessage({
       token: team.bot_token,
       channel: channel.id, 
-      post_at: scheduledTime,
       blocks: [],
       attachments: [{ blocks: headerBlocks }],
       text: " "
     });
 
+    var tempAllUserBlocks = [];
+    var allUserBlocks = [];
+    
     for (var user of team.users) {
+      
       if (user.current_state.lastImgUrl && user.current_state.lastImgTitle) {
         var name = "";
 
-//         // get user name
+        // get user name
         try {
           // Call the users.info method using the built-in WebClient
           // TODO: can't we just <@userId> in the markdown?
           const result = await app.client.users.info({
-            // The token you used to initialize your app is stored in the `context` object
             token: team.bot_token,
-            // Call users.info for the user that joined the workspace
             user: user.user_id
           });
 
@@ -834,30 +835,59 @@ async function exhibitionMessage(teamId, delayedMins) {
         var userResponse = `"${textResponse}" - ${name}`;
 
         // update user block
-        var userBlocks = exhibit_template.blocks;
-        // replace with correct content
-        for (var i = 0; i < userBlocks.length; i++) {
-          if (userBlocks[i].block_id === "artwork_label") {
-            userBlocks[i].title.text = userResponse;
-            userBlocks[i].alt_text = artworkLabel;
-            userBlocks[i].image_url = artworkImg;
-          }
-          if (userBlocks[i].block_id === "cma_button") {
-            userBlocks[i].elements[0].url = artworkUrl; //cma website
-          }
+        var userBlocks = exhibit_template2.blocks;
+
+        userBlocks[1].title.text = userResponse;
+        userBlocks[1].alt_text = artworkLabel;
+        userBlocks[1].image_url = artworkImg;
+        userBlocks[2].elements[0].url = artworkUrl; //cma website
+
+        // the totally stupid way you have to pass by value in JS
+        var blockValue = JSON.parse(JSON.stringify(userBlocks));
+        tempAllUserBlocks = allUserBlocks.concat(blockValue);
+        
+        // IMPORTANT: make sure concatenated blocks don't exceed 4000 char message limit
+        if (JSON.stringify(tempAllUserBlocks).length < 4000) {
+          allUserBlocks = tempAllUserBlocks;         
+        } else { // else send message, clear block data and start building new message
+          console.log("SEND EXHIBITION MESSAGE ");
+          
+          try {
+            const resultUserBlocks = await app.client.chat.postMessage({
+              token: team.bot_token,
+              text: " ",
+              channel: channel.id, 
+              blocks: allUserBlocks
+            }).then(() => {
+              tempAllUserBlocks = [];
+              allUserBlocks = blockValue;                      
+            });          
+          } catch(ex) {
+            console.log("error at block for user ", user.user_id);
+            console.error(ex.message);
+          } 
         }
-        const result = await app.client.chat.scheduleMessage({
-          // The token you used to initialize your app is stored in the `context` object
-          token: team.bot_token,
-          text: " ",
-          channel: channel.id, // find channel id or set current channel as post channel
-          post_at: scheduledTime + 10, // delay so the prompt comes first
-          blocks: [],
-          attachments: [{ blocks: userBlocks }]
-        });
       }
     }
-
+    
+    // send any leftovers...if any
+    if (allUserBlocks.length > 0) {
+      try {
+        const resultUserBlocks = await app.client.chat.postMessage({
+          token: team.bot_token,
+          text: " ",
+          channel: channel.id, 
+          blocks: allUserBlocks
+      }).then(() => {
+        tempAllUserBlocks = [];
+          allUserBlocks = blockValue;                      
+        });          
+      } catch(ex) {
+        console.log("error at block for user ", user.user_id);
+        console.error(ex.message);
+      } 
+    }
+    
     // update footer block
     var footerBlocks = exhibit_footer_template.blocks;
     // replace with correct content
@@ -867,13 +897,9 @@ async function exhibitionMessage(teamId, delayedMins) {
       }
     }
     
-    // the delayed end statement
-    // Call the chat.scheduleMessage method with a token
-    const endResult = await app.client.chat.scheduleMessage({
-      // The token you used to initialize your app is stored in the `context` object
+    const endResult = await app.client.chat.postMessage({
       token: team.bot_token,
-      channel: channel.id, // find channel id or set current channel as post channel
-      post_at: scheduledTime + 12, // delayed more for the ending message
+      channel: channel.id, 
       blocks: [],
       attachments: [{ blocks: footerBlocks }],
       text: " "
@@ -1270,7 +1296,7 @@ const testFn = async () => {
       
       var users = await getAllUsersInTeamChannel(team);
       console.log("channel users ", users);
-      console.log("team users ", team.users);
+      console.log("num participants ", team.users.length);
     } catch (ex) {
       console.log("!!! COULDN'T GET TEAM INFO FOR ", teamId);
       console.error(ex.message);
