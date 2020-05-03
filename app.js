@@ -102,7 +102,7 @@ async function getAllPrompts() {
 }
 getAllPrompts();
 
-const initializePromptData = () => {
+const initializePromptData = async () => {
   axios.get(promptsUrl)
     .then((res) => {
       promptData = {
@@ -323,7 +323,13 @@ async function triggerExhibition() {
 
 
 async function triggerPrompt() {
+  promptData = await initializePromptData(); 
+  
+  console.log("prompt data ", promptData);
+  
   var teamIds = await stateGetTeamIds();  
+  
+  console.log(teamIds);
   
   teamIds.forEach(async (teamId, i) => {
     setTimeout(async () => {
@@ -761,13 +767,12 @@ const testFn = async () => {
       
       console.log("channel users ", users);
       console.log("num participants ", participants.length);
-      console.log("prompt ", getPrompts());
     } catch (ex) {
       console.log("!!! COULDN'T GET TEAM INFO FOR ", teamId);
       console.error(ex.message);
     }
   }
-
+  console.log("prompt ", getPrompts());
   
   return true;
 }
