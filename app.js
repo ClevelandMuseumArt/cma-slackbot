@@ -102,7 +102,7 @@ async function getAllPrompts() {
 }
 getAllPrompts();
 
-const initializePromptData = () => {
+const initializePromptData = async () => {
   axios.get(promptsUrl)
     .then((res) => {
       promptData = {
@@ -323,7 +323,13 @@ async function triggerExhibition() {
 
 
 async function triggerPrompt() {
+  promptData = await initializePromptData(); 
+  
+  console.log("prompt data ", promptData);
+  
   var teamIds = await stateGetTeamIds();  
+  
+  console.log(teamIds);
   
   teamIds.forEach(async (teamId, i) => {
     setTimeout(async () => {
