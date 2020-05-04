@@ -330,7 +330,7 @@ async function triggerPrompt() {
   var teamIds = await stateGetTeamIds();  
   
   console.log(teamIds);
-  
+    
   teamIds.forEach(async (teamId, i) => {
     setTimeout(async () => {
       try {    
@@ -557,6 +557,12 @@ async function sendExhibitionStarted(teamId) {
   const team = await stateGetTeamData(teamId);
   const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   
+  const d = new Date();
+  const dp = d.toDateString().split(' ');
+  var dateStr = `${dp[0]}, ${dp[1]} ${Number(dp[2]).toString()}`;
+
+  const exhibitionTitle = getPrompts().title;
+  
   team.users.forEach(async (user, i) => {  
     setTimeout(async () => {
       try {
@@ -570,7 +576,7 @@ async function sendExhibitionStarted(teamId) {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": `> *Today's exhibition has started on the #${channels[0].name} channel*`
+                    "text": `> *The ${dateStr} exhibition, _${exhibitionTitle}_ is on view on the #${channels[0].name} channel. NO MORE SUBMISSIONS TODAY, but come back at 9am ET every weekday to participate.*`
                   }
                 }        
               ],
@@ -835,84 +841,6 @@ app.message("", async ({ message, payload, context, say }) => {
     return;
   } else {
     // REMOVE textResponse = "";
-  }
-
-  
-  //TODO: DO WE NEED THIS?
-  // for artwork selection
-  if (user.awaitingArtworkSelection) {
-    console.log("AM I EVEN HITTING THIS?");
-    
-    // key confirmation, also links to a search on cma's website
-    await say(
-      "> " +
-        "<" +
-        "https://www.clevelandart.org/art/collection/search?search=" +
-        escapedInput +
-        "|" +
-        rawUserInput +
-        ">"
-    );
-    // await to get results
-    const artObjects = await getArts(escapedInput);
-
-    var targetIndex = getRndInteger(0, artObjects.length - 1);
-
-    var featured = artObjects[targetIndex];
-
-    // store info and status
-    console.log("getting the art index of: " + targetIndex);
-    
-    var creators = formatCreators(featured.creators);
-    
-    user.awaitingTextResponse = true;
-    user.keyword = escapedInput;
-    user.lastImgUrl = featured.images.web.url;
-    user.lastImgCreator = creators;
-    user.lastImgTitle = featured.title;
-    user.artworkUrl = featured.url;
-    user.textResponse = "";
-    
-    stateSetUserData(userId, user);
-
-    // update selection block
-    var promptSelectionBlocks = prompt_selection_template.blocks;
-    var composedImageText = "";
-    if (
-      user.lastImgCreator &&
-      user.lastImgCreator != ""
-    ) {
-      composedImageText =
-        user.lastImgTitle +
-        " by " +
-        user.lastImgCreator;
-    } else {
-      composedImageText = user.lastImgTitle;
-    }
-    // replace with correct content
-    for (var i = 0; i < promptSelectionBlocks.length; i++) {
-      if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
-        // promptSelectionBlocks[i].title.text = composedImageText;
-        promptSelectionBlocks[i].image_url = user.lastImgUrl;
-        promptSelectionBlocks[i].alt_text = composedImageText;
-      }
-    }
-
-    // create a block
-    try {
-      const result = await app.client.chat.postMessage({
-        token: context.botToken,
-        // Channel to send message to
-        channel: user.chatChannelId,
-        // Main art selection interaction
-        blocks: [],
-        attachments: [{ blocks: promptSelectionBlocks }],
-        // Text in the notification
-        text: " "
-      });
-    } catch (error) {
-      console.error(error);
-    }
   }
 });
 
