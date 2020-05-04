@@ -330,7 +330,7 @@ async function triggerPrompt() {
   var teamIds = await stateGetTeamIds();  
   
   console.log(teamIds);
-  
+    
   teamIds.forEach(async (teamId, i) => {
     setTimeout(async () => {
       try {    
@@ -557,6 +557,12 @@ async function sendExhibitionStarted(teamId) {
   const team = await stateGetTeamData(teamId);
   const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   
+  const d = new Date();
+  const dp = d.toDateString().split(' ');
+  var dateStr = `${dp[0]}, ${dp[1]} ${Number(dp[2]).toString()}`;
+
+  const exhibitionTitle = getPrompts().title;
+  
   team.users.forEach(async (user, i) => {  
     setTimeout(async () => {
       try {
@@ -570,7 +576,7 @@ async function sendExhibitionStarted(teamId) {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": `> *Today's exhibition has started on the #${channels[0].name} channel*`
+                    "text": `> *The ${dateStr} exhibition, _${exhibitionTitle}_ is on view on the #${channels[0].name} channel. NO MORE SUBMISSIONS TODAY, but come back at 9am ET every weekday to participate.*`
                   }
                 }        
               ],
