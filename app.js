@@ -248,7 +248,6 @@ const formatCreators = creators => {
 
   if (creators.length > 0) {
     if (creators.length > 1) {
-      console.log("lots of creators");
       creators.forEach(function(item, index) {
         if (index == 0) {
           s = item.description;
@@ -404,7 +403,7 @@ async function exhibitionMessage(teamId) {
         headerBlocks[i].text.text =
           "Today's exhibition is curated by " +
           creditString +
-          "and the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
+          "and the <https://www.clevelandart.org|Cleveland Museum of Art>.";
       } else {
         headerBlocks[i].text.text =
           "Today's exhibition is curated by the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
@@ -603,7 +602,9 @@ async function promptInvoke(channelId, teamId, userId) {
       chatChannelId: channelId,
       awaitingTextResponse: false,
       awaitingArtworkSelection: true,
-      awaitingQueryText: true
+      awaitingQueryText: true, 
+      artIndex: 0,
+      numShuffle: 0
     };
   
   const user = await stateSetUserData(userId, currentState, teamId);
@@ -695,6 +696,7 @@ async function wordSelection(word, userId, botToken) {
   user.lastImgTitle = featured.title;
   user.artworkUrl = featured.url;
   user.textResponse = "";
+  user.artIndex = targetIndex;
   
   stateSetUserData(userId, user);  
   
@@ -779,6 +781,9 @@ const testFn = async () => {
     }
   }
   console.log("prompt ", getPrompts());
+  for (const key in promptData.artworks) {
+    console.log("num results ", key, promptData.artworks[key].length);
+  }
   
   return true;
 }
@@ -908,8 +913,8 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   var wordIntro = `> <https://www.clevelandart.org/art/collection/search?search=${user.keyword}|${user.keyword}>`;  
 
   const artObjects = await getArts(user.keyword);
-
-  var targetIndex = getRndInteger(0, artObjects.length - 1);
+  
+  var targetIndex = (user.artIndex < artObjects.length-1) ? ++user.artIndex : 0;
   
   var featured = artObjects[targetIndex];
 
@@ -922,6 +927,8 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   user.lastImgCreator = creators;
   user.lastImgTitle = featured.title;
   user.artworkUrl = featured.url;
+  user.artIndex = targetIndex;
+  user.numShuffle++;
   
   stateSetUserData(userId, user);
   
