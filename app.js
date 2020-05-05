@@ -9,7 +9,7 @@ const retry = require("async-retry");
 // block templates
 var exhibit_header_template = require("./exhibit_header_template.json");
 var exhibit_footer_template = require("./exhibit_footer_template.json");
-var exhibit_template2 = require("./exhibit_template2.json");
+var exhibit_template2 = require("./exhibit_template.json");
 var home_template = require("./app_home_template.json");
 var prompt_invoke_template = require("./prompt_invoke_template_multi.json");
 var prompt_selection_template = require("./prompt_selection_template.json");
@@ -387,7 +387,7 @@ async function exhibitionMessage(teamId) {
   // replace with correct content
   for (var i = 0; i < headerBlocks.length; i++) {
     if (headerBlocks[i].block_id === "header_title") {
-      headerBlocks[i].text.text = "*" + prompts.title + "*";
+      headerBlocks[i].text.text = `Welcome to today's exhibition: *${prompts.title}*`;
     }
     if (headerBlocks[i].block_id === "header_credits") {
       var creditString = "";
@@ -412,11 +412,11 @@ async function exhibitionMessage(teamId) {
     if (headerBlocks[i].block_id === "header_prompt") {
       headerBlocks[i].text.text = prompts.resultPrompt;
     }
-    if (headerBlocks[i].block_id === "header_image") {
-      // headerBlocks[i].title.text = prompts.promptArtTitle;
-      headerBlocks[i].image_url = prompts.promptArtImageUrl;
-      headerBlocks[i].alt_text = prompts.promptArtTitle;
-    }
+    // if (headerBlocks[i].block_id === "header_image") {
+    //   // headerBlocks[i].title.text = prompts.promptArtTitle;
+    //   headerBlocks[i].image_url = prompts.promptArtImageUrl;
+    //   headerBlocks[i].alt_text = prompts.promptArtTitle;
+    // }
     // TODO: This pushes everything below fold...figure this out
     // if (userBlocks[i].block_id === "cma_button") {
     //         userBlocks[i].elements[0].url = artworkUrl; //cma website
