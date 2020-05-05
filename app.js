@@ -9,7 +9,7 @@ const retry = require("async-retry");
 // block templates
 var exhibit_header_template = require("./exhibit_header_template.json");
 var exhibit_footer_template = require("./exhibit_footer_template.json");
-var exhibit_template2 = require("./exhibit_template2.json");
+var exhibit_template2 = require("./exhibit_template.json");
 var home_template = require("./app_home_template.json");
 var prompt_invoke_template = require("./prompt_invoke_template_multi.json");
 var prompt_selection_template = require("./prompt_selection_template.json");
@@ -379,48 +379,31 @@ async function exhibitionMessage(teamId) {
     state: team
   };
 
-  await writeExhibitionToAPI(slackbotId, data);
+  const writeResults = await writeExhibitionToAPI(slackbotId, data);
 
   // update header block
   var headerBlocks = exhibit_header_template.blocks;
   
-  // replace with correct content
-  for (var i = 0; i < headerBlocks.length; i++) {
-    if (headerBlocks[i].block_id === "header_title") {
-      headerBlocks[i].text.text = "*" + prompts.title + "*";
-    }
-    if (headerBlocks[i].block_id === "header_credits") {
-      var creditString = "";
-      
-      for (var user of team.users) {
-        if (user.current_state.textResponse && user.current_state.textResponse != "") {
-          creditString = creditString.concat(`<@${user.user_id}>, `);
-        }
-      }
+  var titleBlock = headerBlocks.find(x => x.block_id === 'header_title');
+  
+  if (titleBlock) {
+    titleBlock.text.text = `Welcome to today's exhibition: *${prompts.title}*`;
+  }
+  
+  var creditBlock = headerBlocks.find(x => x.block_id === 'header_credits');
+  
+  if (creditBlock) {
+    const creditString = team.users.filter(u => {return u.current_state && u.current_state.lastImgUrl})
+                                 .map(u => {return `<@${u.user_id}>`})
+                                  .join(', ');
+    creditBlock.text.text = `Today's exhibition is curated by ${creditString} and the <https://www.clevelandart.org|Cleveland Museum of Art>.`;
+  }
 
-      // insert credits if user response exists
-      if (creditString != "") {
-        headerBlocks[i].text.text =
-          "Today's exhibition is curated by " +
-          creditString +
-          "and the <https://www.clevelandart.org|Cleveland Museum of Art>.";
-      } else {
-        headerBlocks[i].text.text =
-          "Today's exhibition is curated by the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
-      }
-    }
-    if (headerBlocks[i].block_id === "header_prompt") {
-      headerBlocks[i].text.text = prompts.resultPrompt;
-    }
-    if (headerBlocks[i].block_id === "header_image") {
-      // headerBlocks[i].title.text = prompts.promptArtTitle;
-      headerBlocks[i].image_url = prompts.promptArtImageUrl;
-      headerBlocks[i].alt_text = prompts.promptArtTitle;
-    }
-    // TODO: This pushes everything below fold...figure this out
-    // if (userBlocks[i].block_id === "cma_button") {
-    //         userBlocks[i].elements[0].url = artworkUrl; //cma website
-    //       }
+  var imageBlock = headerBlocks.find(x => x.block_id === 'header_image');
+
+  if (imageBlock) {
+    imageBlock.image_url = prompts.promptArtImageUrl;
+    imageBlock.alt_text = prompts.promptArtTitle;
   }
   
   try {
@@ -519,11 +502,11 @@ async function exhibitionMessage(teamId) {
     
     // update footer block
     var footerBlocks = exhibit_footer_template.blocks;
-    // replace with correct content
-    for (var i = 0; i < footerBlocks.length; i++) {
-      if (footerBlocks[i].block_id === "footer_title") {
-        footerBlocks[i].text.text = prompts.resultPromptConclusion;
-      }
+    
+    var footerTitleBlock = footerBlocks.find(x => x.block_id === 'footer_title');
+  
+    if (footerTitleBlock) {
+      footerTitleBlock.text.text = prompts.resultPromptConclusion;
     }
     
     const endResult = await app.client.chat.postMessage({

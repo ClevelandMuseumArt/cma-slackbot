@@ -4,7 +4,6 @@
       "type": "divider"
     },
     {
-      "block_id": "artwork_label",
       "type": "image",
       "title": {
         "type": "plain_text",
@@ -15,7 +14,6 @@
       "alt_text": "artworkLabel"
     },
     {
-      "block_id": "cma_button",
       "type": "actions",
       "elements": [
         {
