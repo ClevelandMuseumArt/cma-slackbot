@@ -379,48 +379,31 @@ async function exhibitionMessage(teamId) {
     state: team
   };
 
-  await writeExhibitionToAPI(slackbotId, data);
+  const writeResults = await writeExhibitionToAPI(slackbotId, data);
 
   // update header block
   var headerBlocks = exhibit_header_template.blocks;
   
-  // replace with correct content
-  for (var i = 0; i < headerBlocks.length; i++) {
-    if (headerBlocks[i].block_id === "header_title") {
-      headerBlocks[i].text.text = `Welcome to today's exhibition: *${prompts.title}*`;
-    }
-    if (headerBlocks[i].block_id === "header_credits") {
-      var creditString = "";
-      
-      for (var user of team.users) {
-        if (user.current_state.textResponse && user.current_state.textResponse != "") {
-          creditString = creditString.concat(`<@${user.user_id}>, `);
-        }
-      }
+  var titleBlock = headerBlocks.find(x => x.block_id === 'header_title');
+  
+  if (titleBlock) {
+    titleBlock.text.text = `Welcome to today's exhibition: *${prompts.title}*`;
+  }
+  
+  var creditBlock = headerBlocks.find(x => x.block_id === 'header_credits');
+  
+  if (creditBlock) {
+    const creditString = team.users.filter(u => {return u.current_state && u.current_state.lastImgUrl})
+                                 .map(u => {return `<@${u.user_id}>`})
+                                  .join(', ');
+    creditBlock.text.text = `Today's exhibition is curated by ${creditString} and the <https://www.clevelandart.org|Cleveland Museum of Art>.`;
+  }
 
-      // insert credits if user response exists
-      if (creditString != "") {
-        headerBlocks[i].text.text =
-          "Today's exhibition is curated by " +
-          creditString +
-          "and the <https://www.clevelandart.org|Cleveland Museum of Art>.";
-      } else {
-        headerBlocks[i].text.text =
-          "Today's exhibition is curated by the <https://www.clevelandart.org|Cleveland Museum of Art>. Come take a look.";
-      }
-    }
-    if (headerBlocks[i].block_id === "header_prompt") {
-      headerBlocks[i].text.text = prompts.resultPrompt;
-    }
-    // if (headerBlocks[i].block_id === "header_image") {
-    //   // headerBlocks[i].title.text = prompts.promptArtTitle;
-    //   headerBlocks[i].image_url = prompts.promptArtImageUrl;
-    //   headerBlocks[i].alt_text = prompts.promptArtTitle;
-    // }
-    // TODO: This pushes everything below fold...figure this out
-    // if (userBlocks[i].block_id === "cma_button") {
-    //         userBlocks[i].elements[0].url = artworkUrl; //cma website
-    //       }
+  var imageBlock = headerBlocks.find(x => x.block_id === 'header_image');
+
+  if (imageBlock) {
+    imageBlock.image_url = prompts.promptArtImageUrl;
+    imageBlock.alt_text = prompts.promptArtTitle;
   }
   
   try {
