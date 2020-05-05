@@ -502,11 +502,11 @@ async function exhibitionMessage(teamId) {
     
     // update footer block
     var footerBlocks = exhibit_footer_template.blocks;
-    // replace with correct content
-    for (var i = 0; i < footerBlocks.length; i++) {
-      if (footerBlocks[i].block_id === "footer_title") {
-        footerBlocks[i].text.text = prompts.resultPromptConclusion;
-      }
+    
+    var footerTitleBlock = footerBlocks.find(x => x.block_id === 'footer_title');
+  
+    if (footerTitleBlock) {
+      footerTitleBlock.text.text = prompts.resultPromptConclusion;
     }
     
     const endResult = await app.client.chat.postMessage({
