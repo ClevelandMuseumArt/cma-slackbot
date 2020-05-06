@@ -1,14 +1,6 @@
 {
     "blocks": [
         {
-            "block_id": "prompt_intro",
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "prompt_intro"
-            }
-        },
-        {
             "block_id": "prompt_title",
             "type": "section",
             "text": {
