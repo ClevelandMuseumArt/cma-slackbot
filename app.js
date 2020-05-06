@@ -9,7 +9,7 @@ const retry = require("async-retry");
 // block templates
 var exhibit_header_template = require("./exhibit_header_template.json");
 var exhibit_footer_template = require("./exhibit_footer_template.json");
-var exhibit_template2 = require("./exhibit_template.json");
+var exhibit_template = require("./exhibit_template.json");
 var home_template = require("./app_home_template.json");
 var prompt_invoke_template = require("./prompt_invoke_template_multi.json");
 var prompt_selection_template = require("./prompt_selection_template.json");
@@ -390,6 +390,12 @@ async function exhibitionMessage(teamId) {
     titleBlock.text.text = `Welcome to today's exhibition: *${prompts.title}*`;
   }
   
+  var promptBlock = headerBlocks.find(x => x.block_id === 'header_prompt');
+  
+  if (promptBlock) {
+    promptBlock.text.text = prompts.resultPrompt;
+  }
+  
   var creditBlock = headerBlocks.find(x => x.block_id === 'header_credits');
   
   if (creditBlock) {
@@ -402,8 +408,17 @@ async function exhibitionMessage(teamId) {
   var imageBlock = headerBlocks.find(x => x.block_id === 'header_image');
 
   if (imageBlock) {
+    imageBlock.title.text = prompts.title;
     imageBlock.image_url = prompts.promptArtImageUrl;
     imageBlock.alt_text = prompts.promptArtTitle;
+  }
+
+  var buttonBlock = headerBlocks.find(x => x.block_id === 'cma_button');
+
+  if (buttonBlock) {
+    const artworkUrl = `https://www.clevelandart.org/art/${prompts.promptArtImageUrl.split('/')[3]}`;
+    
+    buttonBlock.elements[0].url = artworkUrl;
   }
   
   try {
@@ -447,7 +462,7 @@ async function exhibitionMessage(teamId) {
         var userResponse = `"${textResponse}" - ${name}`;
 
         // update user block
-        var userBlocks = exhibit_template2.blocks;
+        var userBlocks = exhibit_template.blocks;
 
         userBlocks[1].title.text = userResponse;
         userBlocks[1].alt_text = artworkLabel;
@@ -565,7 +580,7 @@ async function sendExhibitionStarted(teamId) {
               // Text in the notification
               text: "Today's exhibition has started"
             }); 
-          console.log("SEND STARTED TO ", i, user.current_state.chatChannelId);
+          console.log("SEND STARTED TO ", user.current_state.chatChannelId);
         }, RETRY_OPTIONS);
       } catch(ex) {
         console.log("!! COULDN'T SEND EXHIBITION MESSAGE TO ", user.user_id);
@@ -620,29 +635,25 @@ async function promptInvoke(channelId, teamId, userId) {
         btns.push(btn);
       }
     
-    // replace with correct content
-    for (var i = 0; i < promptInvokeBlocks.length; i++) {
-      if (promptInvokeBlocks[i].block_id === "prompt_intro") {
-        promptInvokeBlocks[i].text.text = "Today's Exhibition:";
-      }
-      if (promptInvokeBlocks[i].block_id === "prompt_title") {
-        promptInvokeBlocks[i].text.text = `*${prompts.title}*`;
-      }
-      if (promptInvokeBlocks[i].block_id === "prompt_image") {
-        // promptInvokeBlocks[i].title.text = prompts.promptArtTitle;
-        promptInvokeBlocks[i].image_url = prompts.promptArtImageUrl;
-        promptInvokeBlocks[i].alt_text = prompts.promptArtTitle;
-      }
-      
-      if (promptInvokeBlocks[i].block_id === "prompt_prompt") {
-        promptInvokeBlocks[i].text.text = prompts.prompt ;
-      }
-      
-      if (promptInvokeBlocks[i].block_id === "word_buttons") {
-        promptInvokeBlocks[i].elements = btns;
-      }      
+    var titleBlock = promptInvokeBlocks.find(x => x.block_id === 'prompt_title');
+    
+    if (titleBlock) titleBlock.text.text = `*${prompts.title}*`;
+    
+    var imageBlock = promptInvokeBlocks.find(x => x.block_id === 'prompt_image');
+    
+    if (imageBlock) {
+      imageBlock.image_url = prompts.promptArtImageUrl;
+      imageBlock.alt_text = prompts.promptArtTitle;      
     }
 
+    var promptBlock = promptInvokeBlocks.find(x => x.block_id === 'prompt_prompt');
+    
+    if (promptBlock) promptBlock.text.text = prompts.prompt;
+    
+    var buttonBlock = promptInvokeBlocks.find(x => x.block_id === 'word_buttons');
+    
+    if (buttonBlock) buttonBlock.elements = btns;
+    
     const result = await app.client.chat.postMessage({
       token: team.bot_token,
       channel: channelId,
@@ -989,8 +1000,6 @@ app.action("confirm_button", async ({ ack, body, context }) => {
   var wordIntro = `> <https://www.clevelandart.org/art/collection/search?search=${user.keyword}|${user.keyword}>`;  
   
   try {
-    // reaffirm status
-    //adding state
     user.awaitingTextResponse = true;
 
     stateSetUserData(userId, user);
