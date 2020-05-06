@@ -13,7 +13,7 @@
       "type": "image",
       "title": {
         "type": "plain_text",
-        "text": "See you tomorrow!",
+        "text": "See you next time! ArtLens Daily runs Mon-Fri at 9am ET.",
         "emoji": true
       },
       "image_url": "https://cma-artlens.s3.amazonaws.com/slackbot/Banner5.png",
