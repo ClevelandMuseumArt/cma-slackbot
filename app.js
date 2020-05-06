@@ -347,7 +347,7 @@ async function triggerPrompt() {
           await promptInvoke(user, teamId, user);
         }
       } catch (ex) {
-        console.log("!! COULDN'T TRIGGER EXHIBITION FOR TEAM ", teamId);
+        console.log("!! COULDN'T TRIGGER PROMPT FOR TEAM ", teamId);
         console.error(ex.message);
       }        
     }, 5000*i); // 5 second delay between teams
@@ -637,7 +637,7 @@ async function promptInvoke(channelId, teamId, userId) {
     
     var titleBlock = promptInvokeBlocks.find(x => x.block_id === 'prompt_title');
     
-    if (titleBlock) titleBlock.text.text = `*${prompts.title}*`;
+    if (titleBlock) titleBlock.text.text = `Today's Exhibition: *${prompts.title}*`;
     
     var imageBlock = promptInvokeBlocks.find(x => x.block_id === 'prompt_image');
     
@@ -778,7 +778,7 @@ const testFn = async () => {
   for (const key in promptData.artworks) {
     console.log("num results ", key, promptData.artworks[key].length);
   }
-  
+
   return true;
 }
 
@@ -1062,7 +1062,7 @@ app.event("app_home_opened", async ({ context, event, say }) => {
 
   var welcome = {
     "welcome": {
-      "text": "Please connect your calendar to Calendar App.",
+      "text": "Welcome to ArtLens for Slack",
       "blocks": [
         {
           "type": "section",
@@ -1075,21 +1075,21 @@ app.event("app_home_opened", async ({ context, event, say }) => {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "Welcome to ArtLensSlacker :art: an app where the Cleveland Museum of Art curates daily exhibitions from you and your team. Getting started is simple, here’s what you’ll need to do:"
+            "text": "Welcome to ArtLens for Slack :art: an app where the Cleveland Museum of Art curates daily exhibitions from you and your team. Getting started is simple, here’s what you’ll need to do:"
           }
         },
         {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "• Go to the channel where you’d like to post your team’s exhibitions. We recommend using #general, #random, or any channel your whole team shares."
+            "text": "• Go to the channel where you’d like to post your team’s exhibitions. We recommend creating a channel called #artlens-daily-exhibitions and inviting your whole team."
           }
         },
         {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "• Invite ArtLensSlacker to your selected channel with the command `/invite @artlens-slacker` "
+            "text": "• Invite ArtLens to your selected channel with the command `/invite @artlens` "
           }
         }
       ]
