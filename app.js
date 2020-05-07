@@ -175,8 +175,7 @@ const hasExhibitParticipants = async (teamId) => {
   
   if (team.users) {
     for (const user of team.users) {
-      if (user.lastImgUrl && user.lastImgUrl.length > 0) {
-        console.log("!!!!!!! there was an image ", user)
+      if (user.current_state.lastImgUrl && user.current_state.lastImgUrl.length > 0) {
         return true;
       }
     }
@@ -776,7 +775,7 @@ const testFn = async () => {
   const teamIds = await stateGetTeamIds();
   
   for (const teamId of teamIds) {
-    try {
+        try {
       var team = await stateGetTeamData(teamId)
   
       var channels = await getBotChannels(team.bot_token, team.bot_user_id);
