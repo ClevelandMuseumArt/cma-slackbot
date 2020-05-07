@@ -57,7 +57,7 @@ const receiver = new ExpressReceiver({ signingSecret: process.env.SLACK_SIGNING_
 receiver.app.get('/test', (req, res) => {  
   if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {
     testFn(); 
-  
+    
     res.json({"fn":"test"}); 
   } else {
     res.sendStatus(401);
@@ -66,7 +66,12 @@ receiver.app.get('/test', (req, res) => {
 
 receiver.app.get('/trigger-prompt', (req, res) => { 
   if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {  
-    triggerPrompt(); 
+    if (req.query.team_ids) {
+      triggerPrompt(req.query.team_ids.split(',')); 
+    } else {
+      triggerPrompt(); 
+    }
+    
     res.json({"fn":"trigger-prompt"}); 
   } else {
     res.sendStatus(401);
@@ -75,7 +80,12 @@ receiver.app.get('/trigger-prompt', (req, res) => {
 
 receiver.app.get('/trigger-exhibition', (req, res) => { 
   if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {    
-    triggerExhibition(); 
+    if (req.query.team_ids) {
+      triggerExhibition(req.query.team_ids.split(',')); 
+    } else {
+      triggerExhibition();
+    }
+    
     res.json({"fn":"trigger-exhibition"}); 
   } else {
     res.sendStatus(401);
@@ -165,7 +175,8 @@ const hasExhibitParticipants = async (teamId) => {
   
   if (team.users) {
     for (const user of team.users) {
-      if (user.lastImgUrl) {
+      if (user.lastImgUrl && user.lastImgUrl.length > 0) {
+        console.log("!!!!!!! there was an image ", user)
         return true;
       }
     }
@@ -301,13 +312,19 @@ async function getAllUsersInTeamChannel(team) {
 }
 
 
-async function triggerExhibition() {
-  var teamIds = await stateGetTeamIds();
+async function triggerExhibition(teamIds) {
+  if (!teamIds) {
+    teamIds = await stateGetTeamIds();
+  }
 
+  console.log("sending exhibition for ", teamIds);
+  
   teamIds.forEach(async (teamId, i) => {
     setTimeout(async () => {
       try {
-        if (hasExhibitParticipants(teamId)) {
+        const hasParticipants = await hasExhibitParticipants(teamId);
+        
+        if (hasParticipants) {
           await exhibitionMessage(teamId);
         } else {
           console.log("No exhibit participants for team ", teamId);
@@ -321,14 +338,16 @@ async function triggerExhibition() {
 }
 
 
-async function triggerPrompt() {
+async function triggerPrompt(teamIds) {
   promptData = await initializePromptData(); 
   
   console.log("prompt data ", promptData);
   
-  var teamIds = await stateGetTeamIds();  
+  if (!teamIds) {
+    teamIds = await stateGetTeamIds();  
+  }
   
-  console.log(teamIds);
+  console.log("sending prompt for ", teamIds);
     
   teamIds.forEach(async (teamId, i) => {
     setTimeout(async () => {
@@ -344,7 +363,7 @@ async function triggerPrompt() {
 
         for (const user of users) {
           // use userid as channel id to dm
-          await promptInvoke(user, teamId, user);
+          const results = await promptInvoke(user, teamId, user);
         }
       } catch (ex) {
         console.log("!! COULDN'T TRIGGER PROMPT FOR TEAM ", teamId);
