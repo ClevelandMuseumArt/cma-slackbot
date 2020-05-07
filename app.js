@@ -330,7 +330,7 @@ async function triggerExhibition(teamIds) {
         }
       } catch (ex) {
         console.log("!! COULDN'T TRIGGER EXHIBITION FOR TEAM ", teamId);
-        console.error(ex.message);
+        console.error(ex);
       }
     }, 5000*i); // 5 second delay between teams
   });
@@ -366,7 +366,7 @@ async function triggerPrompt(teamIds) {
         }
       } catch (ex) {
         console.log("!! COULDN'T TRIGGER PROMPT FOR TEAM ", teamId);
-        console.error(ex.message);
+        console.error(ex);
       }        
     }, 5000*i); // 5 second delay between teams
   });
@@ -509,7 +509,7 @@ async function exhibitionMessage(teamId) {
             });          
           } catch(ex) {
             console.log("error at block for user ", user.user_id);
-            console.error(ex.message);
+            console.error(ex);
           } 
         }
       }
@@ -529,7 +529,7 @@ async function exhibitionMessage(teamId) {
         });          
       } catch(ex) {
         console.log("error at block for user ", user.user_id);
-        console.error(ex.message);
+        console.error(ex);
       } 
     }
     
@@ -555,7 +555,7 @@ async function exhibitionMessage(teamId) {
       await sendExhibitionStarted(teamId);
     } catch(ex) {
       console.log("!! COULDNT SEND MESSAGES TO TEAM ", teamId);
-      console.error(ex.message);
+      console.error(ex);
     }
     
     // Only clear data on success
@@ -602,7 +602,7 @@ async function sendExhibitionStarted(teamId) {
         }, RETRY_OPTIONS);
       } catch(ex) {
         console.log("!! COULDN'T SEND EXHIBITION MESSAGE TO ", user.user_id);
-        console.error(ex.message);
+        console.error(ex);
       }        
     }, 500*i); // half-second delay between messages
   });  
@@ -759,7 +759,7 @@ async function wordSelection(word, userId, botToken) {
     }, RETRY_OPTIONS);
   } catch (ex) {
     console.log("!! couldn't select word for user ", userId);
-    console.error(ex.message);
+    console.error(ex);
   }
 }
 
@@ -789,7 +789,7 @@ const testFn = async () => {
       console.log("num participants ", participants.length);
     } catch (ex) {
       console.log("!!! COULDN'T GET TEAM INFO FOR ", teamId);
-      console.error(ex.message);
+      console.error(ex);
     }
   }
   console.log("prompt ", getPrompts());
