@@ -25,6 +25,7 @@ const RETRY_OPTIONS = {
 
 const slackBotApiUrl = process.env['SLACK_BOT_API_URL'];
 const openaccessUrl = process.env['OPENACCESS_URL'];
+const promptsUrl = process.env["PROMPT_URL"];
 
 // authenticate
 axios.defaults.headers.common['Authentication'] = process.env['SLACK_BOT_API_TOKEN'];
@@ -104,13 +105,12 @@ var promptData = {
 };
 
 // Populate prompts content
-var prompts = [];
-const promptsUrl = process.env["PROMPT_URL"];
-async function getAllPrompts() {
-  var result = await axios.get(promptsUrl);
-  prompts = result.data;
-}
-getAllPrompts();
+// var prompts = [];
+// async function getAllPrompts() {
+//   var result = await axios.get(promptsUrl);
+//   prompts = result.data;
+// }
+// getAllPrompts();
 
 const initializePromptData = async () => {
   axios.get(promptsUrl)
@@ -1077,7 +1077,6 @@ app.action("confirm_button", async ({ ack, body, context }) => {
 
 //onboarding
 app.event("app_home_opened", async ({ context, event, say }) => {
-
   var welcome = {
     "welcome": {
       "text": "Welcome to ArtLens for Slack",
@@ -1100,16 +1099,23 @@ app.event("app_home_opened", async ({ context, event, say }) => {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "• Go to the channel where you’d like to post your team’s exhibitions. We recommend creating a channel called #artlens-daily-exhibitions and inviting your whole team."
+            "text": "• Go to the channel where you’d like to post your team’s exhibitions. We recommend creating a channel called *#artlens-daily-exhibitions* and inviting your whole team."
           }
         },
         {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "• Invite ArtLens to your selected channel with the command `/invite @artlens` "
+            "text": "• Invite ArtLens to your selected channel with the command `/invite @artlens`."
           }
-        }
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "• Stay tuned for daily prompts, Mon-Fri at 9am ET, in the form of direct messages from *@artlens*."
+          }
+        }        
       ]
     }
   }
