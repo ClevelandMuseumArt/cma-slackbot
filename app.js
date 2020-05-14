@@ -684,7 +684,29 @@ async function promptInvoke(channelId, teamId, userId) {
   }
 }
 
-async function wordSelection(word, userId, botToken) {
+async function wordSelection(word, userId, botToken, body) {
+  var prompts = getPrompts();
+  
+  try {
+    // the only way to deepcopy in javascript, because you don't want to mess up the
+    // blocks for everybody
+    var promptInvokeBlocks = JSON.parse(JSON.stringify(prompt_invoke_template.blocks));
+
+    promptInvokeBlocks.pop();
+    
+    const updateResult = await app.client.chat.update({
+        token: botToken,
+        ts: body.message.ts,
+        channel: body.channel.id,
+        blocks: [],
+        attachments: [{ blocks: promptInvokeBlocks }],
+        text: " "
+      });
+  } catch(ex) {
+    console.log("!!!! trouble updating prompt for ", userId);
+    console.error(ex);
+  }
+
   const user = await stateGetUserData(userId);
 
   var wordIntro = `> <https://www.clevelandart.org/art/collection/search?search=${word}|${word}>`;  
@@ -763,13 +785,6 @@ async function wordSelection(word, userId, botToken) {
   }
 }
 
-async function getIfAdmin(userId, context) {
-  var isAdmin = false;
-  
-  return (process.env.ADMIN_USERS.split('|').includes(userId));
-}
-
-
 const testFn = async () => {
   console.log("### TESTING ###");
   const teamIds = await stateGetTeamIds();
@@ -808,8 +823,6 @@ const testFn = async () => {
 
 // Record after asking for response
 app.message("", async ({ message, payload, context, say }) => {
-  console.log(message.text);
-  
   var userId = payload.user;
   var teamId = payload.team;
   
@@ -823,19 +836,12 @@ app.message("", async ({ message, payload, context, say }) => {
   // verbose for testing
   // TODO: don't need to escape ALL user input
   var rawUserInput = message.text;
-  var escapedInput = rawUserInput.replace(
-    /[\`\#\;\%\$\@\!\*\+\-\=\<\>\&\|\(\)\[\]\{\}\^\~\?\:\\/"]/g,
-    ""
-  );
-  console.log(`escaped user input: ${escapedInput}`);
-
-  var isAdmin = await getIfAdmin(userId, context);
 
   // cancel
   console.log(`user response: ${rawUserInput}, user id: ${message.user}`);
 
   // TODO: fix cancel
-  if (escapedInput == "cancel") {
+  if (rawUserInput == "cancel") {
     stateDeleteUserData(userId);
 
     say(`Your selection have been canceled.`);
@@ -892,7 +898,7 @@ for (var i = 0; i < numChoices; i++) {
     // TODO: this is how it should *all* work, does userData content exist, not
     // in "awaiting*" flags
     if (!user.keyword) {
-      wordSelection(payload.value , userId, context.botToken);
+      wordSelection(payload.value , userId, context.botToken, body);
     } 
   });
 }
