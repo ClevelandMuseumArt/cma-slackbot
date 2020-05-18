@@ -92,6 +92,16 @@ receiver.app.get('/trigger-exhibition', (req, res) => {
     res.sendStatus(401);
   }     
 });
+
+receiver.app.get('/notify-installs-without-channel', (req, res) => { 
+  if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {    
+    notifyInstallsWithoutChannel();
+    
+    res.json({"fn":"notify-installs-without-channel"}); 
+  } else {
+    res.sendStatus(401);
+  }     
+});
  
 const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET, receiver: receiver});
 
@@ -785,12 +795,52 @@ async function wordSelection(word, userId, botToken, body) {
   }
 }
 
+const notifyInstallsWithoutChannel = async () => {
+  const teamIds = await stateGetTeamIds();
+  
+  for (const teamId of teamIds) {
+    try {
+      var team = await stateGetTeamData(teamId)
+  
+      var channels = await getBotChannels(team.bot_token, team.bot_user_id);
+
+      if (channels.length == 0) {
+        console.log("messaging this channel-less admin ", team.admin_user_id);
+        
+        const msg = await app.client.chat.postMessage({
+          token: team.bot_token,
+          channel: team.admin_user_id,
+          blocks: [  {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "Thank you for installing ArtLens for Slack. You must create a channel (we suggest *#artlens-daily-exhibition*) and invite the *ArtLens* bot (as well as your team members) for this to work."
+                }
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "For additional help, email us at ArtLensForSlack@clevelandart.org."
+                }
+              }                  
+          ],
+          text: "One more step!"
+        });
+      }
+    } catch (ex) {
+      console.log("!! error messaging this channel-less team", teamId);
+      console.error(ex);
+    }  
+  }
+}
+
 const testFn = async () => {
   console.log("### TESTING ###");
   const teamIds = await stateGetTeamIds();
   
   for (const teamId of teamIds) {
-        try {
+    try {
       var team = await stateGetTeamData(teamId)
   
       var channels = await getBotChannels(team.bot_token, team.bot_user_id);
