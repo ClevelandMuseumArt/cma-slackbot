@@ -814,7 +814,7 @@ const notifyInstallsWithoutChannel = async () => {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "Thank you for installing ArtLens for Slack. You must create a channel (we suggest *#artlens-daily-exhibition*) and invite the *ArtLens* bot (as well as your team members) for this to work."
+                  "text": "Thank you for installing ArtLens for Slack. You must create a channel (we suggest *#artlens-daily-exhibition*) and invite the *@artlens* bot, as well as your team members, for this to work."
                 }
               },
               {
@@ -1141,13 +1141,6 @@ app.event("app_home_opened", async ({ context, event, say }) => {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "Hi there :wave:"
-          }
-        },
-        {
-          "type": "section",
-          "text": {
-            "type": "mrkdwn",
             "text": "Welcome to ArtLens for Slack :art: an app where the Cleveland Museum of Art curates daily exhibitions from you and your team. Getting started is simple, here’s what you’ll need to do:"
           }
         },
@@ -1155,7 +1148,7 @@ app.event("app_home_opened", async ({ context, event, say }) => {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "• Go to the channel where you’d like to post your team’s exhibitions. We recommend creating a channel called *#artlens-daily-exhibitions* and inviting your whole team."
+            "text": "• You must create a channel (we suggest *#artlens-daily-exhibition*) and invite the *@artlens* bot, as well as your team members, for this to work."
           }
         },
         {
@@ -1164,14 +1157,28 @@ app.event("app_home_opened", async ({ context, event, say }) => {
             "type": "mrkdwn",
             "text": "• Invite ArtLens to your selected channel with the command `/invite @artlens`."
           }
-        },
+        },        
         {
           "type": "section",
           "text": {
             "type": "mrkdwn",
             "text": "• Stay tuned for daily prompts, Mon-Fri at 9am ET, in the form of direct messages from *@artlens*."
           }
-        }        
+        },        
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "• Select an artwork based on the prompt and share your thoughts."
+          }
+        },        
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "• At 5pm ET every weekday, go check out your team's artworks and comments on *#artlens-daily-exhibition* (or your selected channel)."
+          }
+        }     
       ]
     }
   }
