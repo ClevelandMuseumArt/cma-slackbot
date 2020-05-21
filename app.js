@@ -884,19 +884,9 @@ app.message("", async ({ message, payload, context, say }) => {
   }
   
   // verbose for testing
-  // TODO: don't need to escape ALL user input
   var rawUserInput = message.text;
 
-  // cancel
   console.log(`user response: ${rawUserInput}, user id: ${message.user}`);
-
-  // TODO: fix cancel
-  if (rawUserInput == "cancel") {
-    stateDeleteUserData(userId);
-
-    say(`Your selection have been canceled.`);
-    return;
-  }
 
   // wait for artwork comment
   if (user.awaitingTextResponse) {
@@ -919,11 +909,15 @@ app.message("", async ({ message, payload, context, say }) => {
 
 // Cancel everything by responding the actual word
 app.message("cancel", async ({ message, say }) => {
-  var userId = message.user;
-  
-  stateDeleteUserData(userId);
+  // this method looks for the word 'cancel' in a message...
+  // ...make sure that's the only thing in the message
+  if (message.text.toLowerCase() == "cancel") {
+    var userId = message.user;
+    
+    stateDeleteUserData(userId);
 
-  await say(`Your selection have been canceled.`);
+    await say(`Your selection has been canceled.`);
+  }
 });
 
 
