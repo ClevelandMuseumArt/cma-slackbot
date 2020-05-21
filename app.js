@@ -225,9 +225,16 @@ const stateSetUserData = async (userId, currentState, teamId) => {
 const stateDeleteUserData = async (userId) => {
   const url = `${slackBotApiUrl}user/${userId}`;
   
-  const results = await axios.delete(url);
+  const results = await axios.delete(url)
+    .catch(error => {
+      console.log("user not found ", userId);
+  });
   
-  return results.data; 
+  if (results) {
+    return results.data; 
+  } else {
+    return null;
+  }
 };
 
 const stateClearUserData = async (teamId) => {
@@ -914,9 +921,11 @@ app.message("cancel", async ({ message, say }) => {
   if (message.text.toLowerCase() == "cancel") {
     var userId = message.user;
     
-    stateDeleteUserData(userId);
+    const results = await stateDeleteUserData(userId);
 
-    await say(`Your selection has been canceled.`);
+    if (results) {
+      await say(`Your selection has been canceled.`);
+    }
   }
 });
 
