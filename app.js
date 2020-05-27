@@ -65,12 +65,10 @@ receiver.app.get('/test', (req, res) => {
   }
 });
 
-receiver.app.get('/trigger-prompt', (req, res) => { 
+receiver.app.get('/trigger-prompt', async (req, res) => { 
   if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {  
     promptData = await initializePromptData(); 
     
-    console.log("prompt data ", promptData);
-
     if (req.query.team_ids) {
       setTimeout(triggerPrompt(req.query.team_ids.split(',')), 5000); 
     } else {
@@ -359,6 +357,8 @@ async function triggerExhibition(teamIds) {
 
 
 async function triggerPrompt(teamIds) {  
+  console.log("prompt data ", promptData);
+
   if (!teamIds) {
     teamIds = await stateGetTeamIds();  
   }
