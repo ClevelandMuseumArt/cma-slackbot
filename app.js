@@ -256,7 +256,7 @@ const writeExhibitionToAPI = async (slackbotId, data) => {
   };
 
   try {
-    var resp = await axios.post(slackBotApiUrl, req);
+    var resp = await axios.post(`${slackBotApiUrl}slackbot-data`, req);
 
     console.log("writeExhibitionToAPI");
   } catch (error) {
