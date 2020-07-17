@@ -30,6 +30,17 @@ const promptsUrl = process.env["PROMPT_URL"];
 // authenticate
 axios.defaults.headers.common['Authentication'] = process.env['SLACK_BOT_API_TOKEN'];
 
+const getAuth = async(teamId) => {
+    const auth_url = `${slackBotApiUrl}auth_post/${teamId}`;
+    const auth_result = await axios.get(auth_url);
+
+    return {
+        botToken: results.botToken,
+        botId: results.botId,
+        botUserId: results.botUserId
+    };
+}
+
 const getTokenData = async (teamId) => {
   const tokenUrl = `${slackBotApiUrl}tokens/${teamId}`;
   
@@ -248,6 +259,8 @@ const stateClearUserData = async (teamId) => {
 // END STATE API FUNCTIONS
 
 const writeExhibitionToAPI = async (slackbotId, data) => {
+  getAuth();
+	
   var req = {
     slackbot_id: slackbotId,
     data: data
