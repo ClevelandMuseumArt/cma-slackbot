@@ -359,6 +359,22 @@ async function triggerPrompt(teamIds) {
   
   console.log("prompt data ", promptData);
   
+  // Writing tmie, JSON data, and nid to API
+  var date = new Date();
+  var day = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
+  var time = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+  var timestamp = day + " " + time;
+  
+  // Gathering information to send to the db.
+  send_to_db = {
+    current_prompt = promptData,
+    timestamp = timestamp,
+    prompt_node = promptData.nid
+  };
+	
+  // Sends gathered information to the API
+  axios.post(slackBotApiUrl, send_to_db);
+	
   if (!teamIds) {
     teamIds = await stateGetTeamIds();  
   }
