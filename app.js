@@ -102,6 +102,13 @@ receiver.app.get('/notify-installs-without-channel', (req, res) => {
     res.sendStatus(401);
   }     
 });
+
+// Calls the sendSurvey() method
+receiver.app.get('/send-survey', (req, res) => {
+  sendSurvey();
+
+  res.json({"fn":"send-survey});
+});
  
 const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET, receiver: receiver});
 
@@ -839,6 +846,39 @@ const notifyInstallsWithoutChannel = async () => {
       console.log("!! error messaging this channel-less team", teamId);
       console.error(ex);
     }  
+  }
+}
+
+// Function to send survey out to admins
+const sendSurvey = async() => {
+  const teamIds = awaid stateGetTeamIds();
+  
+  for (const teamId of teamIds) {
+    try{
+      // Gets team info
+      var team = await stateGetTeamData(teamId);
+      // Gets admin id
+      var admin = team.admin_user_id;
+      
+      // Builds message to send to the admin
+      const message = await app.client.chat.postMessage({
+        token: team.bot_token,
+        channel: admin,
+        blocks: [{
+	  "type": "section",
+          "text": {
+	    "type": "mrkdwn",
+            "text": "Hello! Would you mind filling out a quick survey for us?"
+	  }
+	}
+        // Send survey in separate message here
+      ],
+      text: "Thank you for using Artlens for Slack!"
+      });
+    } catch (ex){
+      console.log("Error messaging admin", admin);
+      console.log(ex);
+    }
   }
 }
 
