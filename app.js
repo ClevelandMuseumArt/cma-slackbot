@@ -105,9 +105,19 @@ receiver.app.get('/notify-installs-without-channel', (req, res) => {
 
 // Calls the sendSurvey() method
 receiver.app.get('/send-survey', (req, res) => {
-  sendSurvey();
+  // Asking the console who the survey should be sent to
+  const ask = require('prompt-sync')({sigint:true});
+  var sendTo = ask('Who would you like to send the survey to? Please enter either "admin" or "users": ');
+  console.log(`Sending survey to ${sendTo}`);
 
-  res.json({"fn":"send-survey});
+  // Temporary message, to be replaced with survey
+  msg = 'Temporary message';
+
+  // Make sure to make the sendTo variable lowercase
+  sendTo = sendTo.toLowerCase();
+  sendSurvey(msg, sendTo);
+
+  res.json({"fn":"send-survey"});
 });
  
 const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET, receiver: receiver});
@@ -850,35 +860,83 @@ const notifyInstallsWithoutChannel = async () => {
 }
 
 // Function to send survey out to admins
-const sendSurvey = async() => {
-  const teamIds = awaid stateGetTeamIds();
+const sendSurvey = async(msg, sendTo) => {
+  if (sendTo == "admin") {
+    // Send survey to just the admin
+    const teamIds = awaid stateGetTeamIds();
   
-  for (const teamId of teamIds) {
-    try{
-      // Gets team info
-      var team = await stateGetTeamData(teamId);
-      // Gets admin id
-      var admin = team.admin_user_id;
+    for (const teamId of teamIds) {
+      try{
+        // Gets team info
+        var team = await stateGetTeamData(teamId);
+        // Gets admin id
+        var admin = team.admin_user_id;
       
-      // Builds message to send to the admin
-      const message = await app.client.chat.postMessage({
-        token: team.bot_token,
-        channel: admin,
-        blocks: [{
-	  "type": "section",
-          "text": {
-	    "type": "mrkdwn",
-            "text": "Hello! Would you mind filling out a quick survey for us?"
+        // Builds message to send to the admin
+        const message = await app.client.chat.postMessage({
+          token: team.bot_token,
+          channel: admin,
+          blocks: [{
+	    "type": "section",
+            "text": {
+	      "type": "mrkdwn",
+              "text": "Hello! Would you mind filling out a quick survey for us?"
+	    }
 	  }
-	}
-        // Send survey in separate message here
-      ],
-      text: "Thank you for using Artlens for Slack!"
-      });
-    } catch (ex){
-      console.log("Error messaging admin", admin);
-      console.log(ex);
+          // Sending survey below
+	  {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": msg
+            }
+          }
+        ],
+        text: "Thank you for using Artlens for Slack!"
+        });
+      } catch (ex){
+        console.log("Error messaging admin", admin);
+        console.log(ex);
+      }
     }
+  } else if (sendTo == "users"){
+    //Sends survey to all users
+    const teamIds = await stateGetTeamIds();
+
+    for(const teamId of teamIds) {
+      try{
+        const users = getAllUsersInTeamChannel(teamId);
+      
+        for(const user in users){
+	  const message = await app.client.chat.postMessage({
+	    token: team.bot_token,
+	    channel: user,
+	    blocks: [{
+	        "type": "section",
+		"text": {
+		  "type": "mrkdwn",
+		  "text": "Hello! Would you mind filling out a quick survey for us?"
+		}
+	      },
+              //sending survey below
+              {
+	        "type": "section",
+	        "text": {
+		  "type": "mrkdwn",
+		  "text": msg
+		}
+	      }
+            ],
+	    text: "Thank you for using Artlens for Slack!"
+	  });	
+	}      
+      } catch (ex) {
+        console.log("Error messaging admin", admin);
+        console.log(ex);
+      }
+    }
+  } else {
+    console.log("Input Error.");
   }
 }
 
