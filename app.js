@@ -867,7 +867,7 @@ const notifyInstallsWithoutChannel = async () => {
 const sendSurvey = async(msg, sendTo) => {
   if (sendTo == "admin") {
     // Send survey to just the admin
-    const teamIds = awaid stateGetTeamIds();
+    const teamIds = await stateGetTeamIds();
   
     for (const teamId of teamIds) {
       try{
@@ -886,7 +886,7 @@ const sendSurvey = async(msg, sendTo) => {
 	      "type": "mrkdwn",
               "text": "Hello! Would you mind filling out a quick survey for us?"
 	    }
-	  }
+	  },
           // Sending survey below
 	  {
             "type": "section",
