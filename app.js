@@ -65,12 +65,17 @@ receiver.app.get('/test', (req, res) => {
   }
 });
 
-receiver.app.get('/trigger-prompt', (req, res) => { 
+receiver.app.get('/trigger-prompt', async (req, res) => { 
   if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {  
+    promptData = await initializePromptData(); 
+    
+    // TODO: this is a little bit of a hack
+    setTimeout(() => { console.log("ensuring prompt completes")}, 5000);
+
     if (req.query.team_ids) {
       triggerPrompt(req.query.team_ids.split(',')); 
-    } else {
-      triggerPrompt(); 
+    } else {      
+      triggerPrompt();
     }
     
     res.json({"fn":"trigger-prompt"}); 
@@ -168,6 +173,9 @@ const initializePromptData = async () => {
           });
         
       } 
+    })
+    .catch(error => {
+      console.log("!!! error initializing prompt: ", error);
     });
 }
 
@@ -271,7 +279,7 @@ const writeExhibitionToAPI = async (slackbotId, data) => {
   };
 
   try {
-    var resp = await axios.post(slackBotApiUrl, req);
+    var resp = await axios.post(`${slackBotApiUrl}slackbot-data`, req);
 
     console.log("writeExhibitionToAPI");
   } catch (error) {
@@ -371,11 +379,7 @@ async function triggerExhibition(teamIds) {
 }
 
 
-async function triggerPrompt(teamIds) {
-  promptData = await initializePromptData(); 
-  
-  console.log("prompt data ", promptData);
-  
+async function triggerPrompt(teamIds) {  
   if (!teamIds) {
     teamIds = await stateGetTeamIds();  
   }
