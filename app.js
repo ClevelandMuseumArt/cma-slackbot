@@ -315,19 +315,25 @@ function getRndInteger(min, max) {
 }
 
 async function getBotChannels(botToken, botUserId) {
-  const result =  await app.client.users.conversations({
-    token: botToken,
-    user: botUserId
-  }); 
-  
-  const channels = result.channels.map((item) => { 
-    return {
-      id: item.id,
-      name: item.name
-    }
-  });  
-  
-  return channels;
+  try {
+    const result =  await app.client.users.conversations({
+      token: botToken,
+      user: botUserId
+    }); 
+    
+    const channels = result.channels.map((item) => { 
+      return {
+        id: item.id,
+        name: item.name
+      }
+    });  
+
+    return channels;
+  } catch (error) {
+    console.log("Couldn't get channel for bot user ", botUserId);
+    console.error(error);
+    return [];
+  }
 }
 
 async function getAllUsersInTeamChannel(team) {
@@ -882,7 +888,7 @@ const sendNotification = async(msgType='admin',
         const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   
         if (channels.length == 0 || team.users.length == 0) {
-          console.log(`No channel assigned, skipping exhibition for  ${teamId}`);
+          console.log(`No channel assigned, skipping notification for  ${teamId}`);
           channelIds = [];
         } else {
           channelIds = [channels[0].id];
@@ -893,7 +899,9 @@ const sendNotification = async(msgType='admin',
         channelIds = [team.admin_user_id];
     }
 
-    console.log(`sending to team ${teamId}, channels ${channelIds}`);  
+    if (channelIds.length > 0) {
+      console.log(`sending to team ${teamId}, channels ${channelIds}`);  
+    }
 
     for (const channelId of channelIds) {
       const message = await app.client.chat.postMessage({
