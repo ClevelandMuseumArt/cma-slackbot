@@ -1,6 +1,7 @@
 // This the cma slack bot prototype
 // Require the Bolt package (github.com/slackapi/bolt)
 const { App, ExpressReceiver } = require("@slack/bolt");
+const bodyParser= require('body-parser');
 const axios = require("axios");
 const dotenv = require("dotenv");
 const logts = require("log-timestamp");
@@ -53,6 +54,7 @@ const authorizeFn = async ({teamId}) => {
 }
 
 const receiver = new ExpressReceiver({ signingSecret: process.env.SLACK_SIGNING_SECRET, endpoints: '/slack/events' });
+receiver.app.use(bodyParser.json());
 
 // command endpoints
 receiver.app.get('/test', (req, res) => {  
@@ -70,13 +72,13 @@ receiver.app.get('/trigger-prompt', async (req, res) => {
     promptData = await initializePromptData(); 
     
     // TODO: this is a little bit of a hack
-    setTimeout(() => { console.log("ensuring prompt completes")}, 5000);
-
-    if (req.query.team_ids) {
-      triggerPrompt(req.query.team_ids.split(',')); 
-    } else {      
-      triggerPrompt();
-    }
+    setTimeout(() => { 
+      if (req.query.team_ids) {
+        triggerPrompt(req.query.team_ids.split(',')); 
+      } else {      
+        triggerPrompt();
+      }
+    }, 5000);
     
     res.json({"fn":"trigger-prompt"}); 
   } else {
@@ -108,21 +110,14 @@ receiver.app.get('/notify-installs-without-channel', (req, res) => {
   }     
 });
 
-// Calls the sendSurvey() method
-receiver.app.get('/send-survey', (req, res) => {
-  // Asking the console who the survey should be sent to
-  const ask = require('prompt-sync')({sigint:true});
-  var sendTo = ask('Who would you like to send the survey to? Please enter either "admin" or "users": ');
-  console.log(`Sending survey to ${sendTo}`);
-
-  // Temporary message, to be replaced with survey
-  msg = 'Temporary message';
-
-  // Make sure to make the sendTo variable lowercase
-  sendTo = sendTo.toLowerCase();
-  sendSurvey(msg, sendTo);
-
-  res.json({"fn":"send-survey"});
+receiver.app.post('/notify-users', (req, res) => { 
+  if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {    
+    sendNotification(req.body.msg_type, req.body.msg, req.body.notification);
+    
+    res.json({"fn":"notify-users"}); 
+  } else {
+    res.sendStatus(401);
+  }     
 });
  
 const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET, receiver: receiver});
@@ -863,84 +858,77 @@ const notifyInstallsWithoutChannel = async () => {
   }
 }
 
-// Function to send survey out to admins
-const sendSurvey = async(msg, sendTo) => {
-  if (sendTo == "admin") {
-    // Send survey to just the admin
-    const teamIds = await stateGetTeamIds();
-  
-    for (const teamId of teamIds) {
-      try{
-        // Gets team info
-        var team = await stateGetTeamData(teamId);
-        // Gets admin id
-        var admin = team.admin_user_id;
-      
-        // Builds message to send to the admin
-        const message = await app.client.chat.postMessage({
-          token: team.bot_token,
-          channel: admin,
-          blocks: [{
-	    "type": "section",
-            "text": {
-	      "type": "mrkdwn",
-              "text": "Hello! Would you mind filling out a quick survey for us?"
-	    }
-	  },
-          // Sending survey below
-	  {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": msg
-            }
-          }
-        ],
-        text: "Thank you for using Artlens for Slack!"
-        });
-      } catch (ex){
-        console.log("Error messaging admin", admin);
-        console.log(ex);
-      }
-    }
-  } else if (sendTo == "users"){
-    //Sends survey to all users
-    const teamIds = await stateGetTeamIds();
+// send generic notification to either
+// * 'admin' = channel admin direct message (default)
+// * 'users' = all users direct message
+// * 'channel' = in channel
+const sendNotification = async(msgType='admin', 
+                                msg, 
+                                notification='Thank you for using ArtLens for Slack!') => {
+  const teamIds = await stateGetTeamIds();
 
-    for(const teamId of teamIds) {
-      try{
-        const users = getAllUsersInTeamChannel(teamId);
-      
-        for(const user in users){
-	  const message = await app.client.chat.postMessage({
-	    token: team.bot_token,
-	    channel: user,
-	    blocks: [{
-	        "type": "section",
-		"text": {
-		  "type": "mrkdwn",
-		  "text": "Hello! Would you mind filling out a quick survey for us?"
-		}
-	      },
-              //sending survey below
-              {
-	        "type": "section",
-	        "text": {
-		  "type": "mrkdwn",
-		  "text": msg
-		}
-	      }
-            ],
-	    text: "Thank you for using Artlens for Slack!"
-	  });	
-	}      
-      } catch (ex) {
-        console.log("Error messaging admin", admin);
-        console.log(ex);
-      }
+  console.log(`sending notification, msgType=${msgType}, msg=${msg}`);
+
+  for (const teamId of teamIds) {
+    const team = await stateGetTeamData(teamId);
+    
+    let channelIds;
+
+    switch(msgType) {
+      case 'users':
+        channelIds = await getAllUsersInTeamChannel(team);
+        break;
+      case 'channel':
+        const channels = await getBotChannels(team.bot_token, team.bot_user_id);
+  
+        if (channels.length == 0 || team.users.length == 0) {
+          console.log(`No channel assigned, skipping exhibition for  ${teamId}`);
+          channelIds = [];
+        } else {
+          channelIds = [channels[0].id];
+        }
+
+        break;
+      default:
+        channelIds = [team.admin_user_id];
     }
-  } else {
-    console.log("Input Error.");
+
+    console.log(`sending to team ${teamId}, channels ${channelIds}`);  
+
+    for (const channelId of channelIds) {
+      const message = await app.client.chat.postMessage({
+        token: team.bot_token,
+        channel: channelId,
+        blocks: [
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "To our ArtLens for Slack users:"
+          }
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": msg
+          }
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "We greatly appreciate all of our user’s feedback, and are continually looking for ways to improve this app. Please don’t hesitate to send comments, questions or feedback to artlensforslack@clevelandart.org."
+          }
+        }   
+      ],
+      text: "Thank you for using Artlens for Slack!"
+      })
+      .catch((error) => {
+        console.log(`Error messaging type ${msgType} for channel ${channelId}`);
+        console.log(error);
+      });
+    }
   }
 }
 
