@@ -912,7 +912,7 @@ const sendNotification = async(msgType='admin',
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "To our ArtLens for Slack users:"
+            "text": ":art: To our ArtLens for Slack users:"
           }
         },
         {
@@ -928,7 +928,14 @@ const sendNotification = async(msgType='admin',
             "type": "mrkdwn",
             "text": "We greatly appreciate all of our user’s feedback, and are continually looking for ways to improve this app. Please don’t hesitate to send comments, questions or feedback to artlensforslack@clevelandart.org."
           }
-        }   
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "--Cleveland Museum of Art, Digital Innovation and Tech Service Dept"
+          }
+        }      
       ],
       text: "Thank you for using Artlens for Slack!"
       })
