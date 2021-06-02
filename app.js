@@ -122,7 +122,7 @@ receiver.app.post('/notify-users', (req, res) => {
 
 receiver.app.post('/test-notify-team-channel', (req, res) => { 
   if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {    
-    sendNotification(req.body.team_id, req.body.msg, req.body.notification);
+    sendTestNotification(req.body.team_id, req.body.msg, req.body.notification);
     
     res.json({"fn":"test-notify-team-channel"}); 
   } else {
@@ -970,6 +970,10 @@ const sendTestNotification = async(teamId,
 
   const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   const users = await getAllUsersInTeamChannel(team);
+
+
+  console.log(`these are the channels ${channels}`);
+
 
   if (channels.length == 0 || users.length == 0) {
     console.log(`No channel assigned, skipping notification for  ${teamId}`);
