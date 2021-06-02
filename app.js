@@ -971,10 +971,6 @@ const sendTestNotification = async(teamId,
   const channels = await getBotChannels(team.bot_token, team.bot_user_id);
   const users = await getAllUsersInTeamChannel(team);
 
-
-  console.log(`these are the channels ${channels}`);
-
-
   if (channels.length == 0 || users.length == 0) {
     console.log(`No channel assigned, skipping notification for  ${teamId}`);
     channelIds = [];
