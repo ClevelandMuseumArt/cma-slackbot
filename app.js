@@ -119,7 +119,17 @@ receiver.app.post('/notify-users', (req, res) => {
     res.sendStatus(401);
   }     
 });
- 
+
+receiver.app.post('/test-notify-team-channel', (req, res) => { 
+  if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {    
+    sendNotification(req.body.team_id, req.body.msg, req.body.notification);
+    
+    res.json({"fn":"test-notify-team-channel"}); 
+  } else {
+    res.sendStatus(401);
+  }     
+});
+
 const app = new App({authorize: authorizeFn, signingSecret: process.env.SLACK_SIGNING_SECRET, receiver: receiver});
 
 /*
@@ -946,6 +956,75 @@ const sendNotification = async(msgType='admin',
     }
   }
 }
+
+
+// same as SendNotification but only to single team channel
+const sendTestNotification = async(teamId, 
+                                msg,
+                                notification='Thank you for using ArtLens for Slack!') => {
+  console.log(`sending notification, msgType=test channel, msg=${msg}`);
+
+  const team = await stateGetTeamData(teamId);
+  
+  let channelIds;
+
+  const channels = await getBotChannels(team.bot_token, team.bot_user_id);
+  const users = await getAllUsersInTeamChannel(team);
+
+  if (channels.length == 0 || users.length == 0) {
+    console.log(`No channel assigned, skipping notification for  ${teamId}`);
+    channelIds = [];
+  } else {
+    channelIds = [channels[0].id];
+  }
+
+  if (channelIds.length > 0) {
+    console.log(`sending to team ${teamId}, channels ${channelIds}`);  
+  }
+
+  for (const channelId of channelIds) {
+    const message = await app.client.chat.postMessage({
+      token: team.bot_token,
+      channel: channelId,
+      blocks: [
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": ":art: To our ArtLens for Slack users:"
+        }
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": msg
+        }
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "We greatly appreciate all of our user’s feedback, and are continually looking for ways to improve this app. Please don’t hesitate to send comments, questions or feedback to artlensforslack@clevelandart.org."
+        }
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "--Cleveland Museum of Art, Digital Innovation and Tech Service Dept"
+        }
+      }      
+    ],
+    text: "Thank you for using Artlens for Slack!"
+    })
+    .catch((error) => {
+      console.log(`Error messaging type ${msgType} for channel ${channelId}`);
+      console.log(error);
+    });
+  }
+}
+
 
 const testFn = async () => {
   console.log("### TESTING ###");
