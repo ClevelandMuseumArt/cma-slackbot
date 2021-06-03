@@ -737,7 +737,7 @@ async function promptInvoke(channelId, teamId, userId) {
     var imageBlock = promptInvokeBlocks.find(x => x.block_id === 'prompt_image');
     
     if (imageBlock) {
-      imageBlock.image_url = prompts.promptArtImageUrl;
+      imageBlock.image_url = cdn_to_s3_url(prompts.promptArtImageUrl);
       imageBlock.alt_text = prompts.promptArtTitle;      
     }
 
