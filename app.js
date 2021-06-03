@@ -936,7 +936,7 @@ const sendNotification = async(msgType='admin',
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "We greatly appreciate all of our user’s feedback, and are continually looking for ways to improve this app. Please don’t hesitate to send comments, questions or feedback to artlensforslack@clevelandart.org."
+            "text": "In the meantime, we hope to hear from you about your overall experience with ArtLens for Slack. Please let us know how we're doing by sending your feedback to artlensforslack@clevelandart.org."
           }
         },
         {
