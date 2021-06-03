@@ -975,6 +975,7 @@ const sendTestNotification = async(teamId,
     console.log(`No channel assigned, skipping notification for  ${teamId}`);
     channelIds = [];
   } else {
+    console.log(`channels found - ${channels}`);
     channelIds = [channels[0].id];
   }
 
