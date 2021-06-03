@@ -112,7 +112,10 @@ receiver.app.get('/notify-installs-without-channel', (req, res) => {
 
 receiver.app.post('/notify-users', (req, res) => { 
   if (req.headers.authentication == process.env['SLACK_BOT_API_TOKEN']) {    
-    sendNotification(req.body.msg_type, req.body.msg, req.body.notification);
+    sendNotification(req.body.msg_type, 
+                     req.body.msg, 
+                     req.body.closing, 
+                     req.body.notification);
     
     res.json({"fn":"notify-users"}); 
   } else {
