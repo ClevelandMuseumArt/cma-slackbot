@@ -156,8 +156,36 @@ const initializePromptData = async () => {
         prompt: {},
         artworks: {}
       }
-      promptData.prompt = res.data[promptIndex];
+      // promptData.prompt = res.data[promptIndex];
       
+      promptData.prompt = {
+  "title": "Message Sent",
+  "prompt": "If failing technology has been slowing you down recently, try out an older method of communication instead. Are you attaching notes to a \"messenger bird,\" sending a \"message in a bottle\" or using \"smoke signals\" to communicate? ",
+  "promptArtTitle": "Copy of Student at a Table by Candelight, copy after Rembrandt van Rijn",
+  "promptArtImageUrl": "https://openaccess-cdn.clevelandart.org/1926.480/1926.480_web.jpg",
+  "choices": [
+    {
+      "text": "messenger bird",
+      "query": "primary_title:(\"pigeon\") OR primary_title:(\"eagle\") OR primary_title:(\"parrot\") OR primary_title:(\"owl\") OR primary_title:(\"hawk\") NOT persian NOT handscroll NOT tuti-nama NOT hanging NOT bead NOT bowl NOT manuscript NOT fragment NOT pin NOT recto NOT missale NOT fragmentary NOT plate NOT tower NOT ars"
+    },
+    {
+      "text": "message in a bottle",
+      "query": "Canteen OR flask OR ampula NOT powder NOT Verelst NOT Avalokiteshvara NOT ars"
+    },
+    {
+      "text": "smoke signals",
+      "query": "accession_number:(\"1943.70\") OR accession_number:(\"1940.547\") OR accession_number:(\"1976.30\") OR accession_number:(\"1942.1357.a\") OR accession_number:(\"1982.177\") OR accession_number:(\"1924.412\") OR accession_number:(\"1938.56\") OR accession_number:(\"1994.198\") OR accession_number:(\"1991.173\") OR accession_number:(\"1953.6\") OR accession_number:(\"1930.190\") OR accession_number:(\"1942.1263\") OR accession_number:(\"1920.305\") OR accession_number:(\"1985.327\") OR accession_number:(\"1941.26.4\") OR accession_number:(\"1921.346\") OR accession_number:(\"1946.1705\") OR accession_number:(\"1946.1705\") NOT ars"
+    }
+  ],
+  "resultPrompt": "Maybe older, but not necessarily more reliable. Who knows where that bird is flying off to. ",
+  "resultPromptConclusion": "Hopefully we are sending you off to a great weekend! See you at the next exhibition. ",
+  "defaultQueryPattern": [
+    ""
+  ],
+  "date": "2021-06-04",
+  "nid": "136968"
+};
+
       var query = promptData.prompt.defaultQueryPattern;
       var thisQuery = "";  
     
