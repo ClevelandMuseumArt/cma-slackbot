@@ -1389,7 +1389,7 @@ app.event("app_home_opened", async ({ context, event, say }) => {
 });
 
 /* TESTING */
-const cdn_to_s3_url(image_url) => {
+const cdn_to_s3_url = (image_url) => {
   const cdn_url = "https://openaccess-cdn.clevelandart.org/";
   const s3_url = "https://cma-slackbot-images.s3.amazonaws.com/";
 
