@@ -476,7 +476,7 @@ async function exhibitionMessage(teamId) {
 
   if (imageBlock) {
     imageBlock.title.text = prompts.title;
-    imageBlock.image_url = prompts.promptArtImageUrl;
+    imageBlock.image_url = cdn_to_s3_url(prompts.promptArtImageUrl);
     imageBlock.alt_text = prompts.promptArtTitle;
   }
 
@@ -519,7 +519,7 @@ async function exhibitionMessage(teamId) {
           console.error(error);
         }
 
-        var artworkImg = user.current_state.lastImgUrl;
+        var artworkImg = cdn_to_s3_url(user.current_state.lastImgUrl);
         var artworkUrl = user.current_state.artworkUrl;
         var textResponse = user.current_state.textResponse;
 
@@ -774,7 +774,7 @@ async function wordSelection(word, userId, botToken, body) {
   user.keyword = word;
   user.awaitingTextResponse = true;
   user.awaitingQueryText = false;
-  user.lastImgUrl = featured.images.web.url;
+  user.lastImgUrl = cdn_to_s3_url(featured.images.web.url);
   user.lastImgCreator = creators;
   user.lastImgTitle = featured.title;
   user.artworkUrl = featured.url;
@@ -801,7 +801,7 @@ async function wordSelection(word, userId, botToken, body) {
   for (var i = 0; i < promptSelectionBlocks.length; i++) {
     if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
       // promptSelectionBlocks[i].title.text = composedImageText;
-      promptSelectionBlocks[i].image_url = user.lastImgUrl;
+      promptSelectionBlocks[i].image_url = cdn_to_s3_url(user.lastImgUrl);
       promptSelectionBlocks[i].alt_text = composedImageText;
     }
     
@@ -1180,7 +1180,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   var creators = formatCreators(featured.creators);
 
   user.awaitingTextResponse = true;
-  user.lastImgUrl = featured.images.web.url;
+  user.lastImgUrl = cdn_to_s3_url(featured.images.web.url);
   user.lastImgCreator = creators;
   user.lastImgTitle = featured.title;
   user.artworkUrl = featured.url;
@@ -1209,7 +1209,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   for (var i = 0; i < promptSelectionBlocks.length; i++) {
     if (promptSelectionBlocks[i].block_id === "prompt_selection_img") {
       // promptSelectionBlocks[i].title.text = composedImageText;
-      promptSelectionBlocks[i].image_url = user.lastImgUrl;
+      promptSelectionBlocks[i].image_url = cdn_to_s3_url(user.lastImgUrl);
       promptSelectionBlocks[i].alt_text = composedImageText;
     }
     
@@ -1286,7 +1286,7 @@ app.action("confirm_button", async ({ ack, body, context }) => {
     for (var i = 0; i < confirmImageBlocks.length; i++) {
       if (confirmImageBlocks[i].block_id === "confirm_image") {
         // confirmImageBlocks[i].title.text = composedImageText;
-        confirmImageBlocks[i].image_url = user.lastImgUrl;
+        confirmImageBlocks[i].image_url = cdn_to_s3_url(user.lastImgUrl);
         confirmImageBlocks[i].alt_text = composedImageText;
       }
       
@@ -1387,6 +1387,14 @@ app.event("app_home_opened", async ({ context, event, say }) => {
     }
   }
 });
+
+/* TESTING */
+const cdn_to_s3_url(image_url) => {
+  const cdn_url = "https://openaccess-cdn.clevelandart.org/";
+  const s3_url = "https://cma-slackbot-images.s3.amazonaws.com/";
+
+  return image_url.replace(cdn_url, s3_url);
+}
 
 /*
  * APP STARTUP
