@@ -870,6 +870,7 @@ const notifyInstallsWithoutChannel = async () => {
 // * 'channel' = in channel
 const sendNotification = async(msgType='admin', 
                                 msg, 
+                                closingMsg="We greatly appreciate all of our user’s feedback, and are continually looking for ways to improve this app. Please don’t hesitate to send comments, questions or feedback to artlensforslack@clevelandart.org.",
                                 notification='Thank you for using ArtLens for Slack!') => {
   const teamIds = await stateGetTeamIds();
 
@@ -886,8 +887,9 @@ const sendNotification = async(msgType='admin',
         break;
       case 'channel':
         const channels = await getBotChannels(team.bot_token, team.bot_user_id);
+        const users = await getAllUsersInTeamChannel(team);
   
-        if (channels.length == 0 || team.users.length == 0) {
+        if (channels.length == 0 || users.length == 0) {
           console.log(`No channel assigned, skipping notification for  ${teamId}`);
           channelIds = [];
         } else {
@@ -926,7 +928,7 @@ const sendNotification = async(msgType='admin',
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "We greatly appreciate all of our user’s feedback, and are continually looking for ways to improve this app. Please don’t hesitate to send comments, questions or feedback to artlensforslack@clevelandart.org."
+            "text": closingMsg
           }
         },
         {
