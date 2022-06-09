@@ -469,7 +469,7 @@ async function exhibitionMessage(teamId) {
 
   if (imageBlock) {
     imageBlock.title.text = prompts.title;
-    imageBlock.image_url = prompts.promptArtImageUrl;
+    imageBlock.image_url = prompts.promptArtImageUrl.trim();
     imageBlock.alt_text = prompts.promptArtTitle;
   }
 
@@ -702,7 +702,7 @@ async function promptInvoke(channelId, teamId, userId) {
     var imageBlock = promptInvokeBlocks.find(x => x.block_id === 'prompt_image');
     
     if (imageBlock) {
-      imageBlock.image_url = prompts.promptArtImageUrl;
+      imageBlock.image_url = prompts.promptArtImageUrl.trim();
       imageBlock.alt_text = prompts.promptArtTitle;      
     }
 
