@@ -1,0 +1,48 @@
+{
+    "display_information": {
+        "name": "ArtLens for Slack",
+        "description": "Curate a daily exhibition with the Cleveland Museum of Art",
+        "background_color": "#313236",
+        "long_description": "ArtLens for Slack shares artwork from The Cleveland Museum of Art’s expansive Open Access collection with you and your team, inserting a moment of art appreciation into the busy workday. With the assistance of a daily prompt, curate an artwork around a theme and share your thoughts on it. Then, watch as ArtLens for Slack generates an art exhibit from your entire team. You’ll learn something new about an artwork, and maybe a little more about your coworkers too.  \r\n\r\nThe Cleveland Museum of Art is a global leader in creating transformative experiences through art, “for the benefit of all the people forever,” including the millions of people on Slack. ArtLens for Slack allows teams to curate daily art exhibitions with their coworkers, for distraction and inspiration as a stand in for the traditional museum experience.\r\n\r\nHow it works:\r\n\r\n•\t*You must create a channel (we suggest #artlens-daily-exhibition) and invite the @artlens bot, as well as your team members, for this to work.*\r\n\r\n•\tInvite the *@artlens* bot to your selected channel with the command `/invite @artlens`.\r\n\r\n•\tStay tuned for daily prompts, Mon-Fri at 9am ET, in the form of direct messages from *@artlens*.\r\n\r\n•\tSelect an artwork based on the prompt and share your thoughts. \r\n\r\n•\tAt 5pm ET every weekday, go check out your team's artworks and comments on *#artlens-daily-exhibitions* (or your selected channel)."
+    },
+    "features": {
+        "bot_user": {
+            "display_name": "ArtLens",
+            "always_online": true
+        }
+    },
+    "oauth_config": {
+        "redirect_urls": [
+            "https://artlens-slacker-app.clevelandart.org/api/slackbot/oauth_redirect"
+        ],
+        "scopes": {
+            "bot": [
+                "app_mentions:read",
+                "channels:read",
+                "chat:write",
+                "im:history",
+                "im:read",
+                "users:read"
+            ]
+        }
+    },
+    "settings": {
+        "event_subscriptions": {
+            "request_url": "https://artlens-slacker-app.clevelandart.org/slack/events",
+            "user_events": [
+                "app_home_opened"
+            ],
+            "bot_events": [
+                "app_mention",
+                "message.im"
+            ]
+        },
+        "interactivity": {
+            "is_enabled": true,
+            "request_url": "https://artlens-slacker-app.clevelandart.org/slack/events"
+        },
+        "org_deploy_enabled": false,
+        "socket_mode_enabled": false,
+        "token_rotation_enabled": false
+    }
+}
