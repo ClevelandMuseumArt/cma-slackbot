@@ -169,7 +169,13 @@ const initializePromptData = async () => {
           .then((res) => {
             promptData.artworks[choice.text] = res.data.data;
           });
-        
+	      
+	for (const key in promptData.artworks) {
+	  for (const index in promptData.artworks[key]) {
+	    promptData.artworks[key][index].url += '?utm_source=slack_prompt';
+	  }
+	}
+	      
       } 
     })
     .catch(error => {
@@ -476,7 +482,7 @@ async function exhibitionMessage(teamId) {
   var buttonBlock = headerBlocks.find(x => x.block_id === 'cma_button');
 
   if (buttonBlock) {
-    const artworkUrl = `https://www.clevelandart.org/art/${prompts.promptArtImageUrl.split('/')[3]}`;
+    const artworkUrl = `https://www.clevelandart.org/art/${prompts.promptArtImageUrl.split('/')[3]}?utm_source=slack_exhibition`;
     
     buttonBlock.elements[0].url = artworkUrl;
   }
@@ -662,7 +668,8 @@ async function promptInvoke(channelId, teamId, userId) {
       awaitingArtworkSelection: true,
       awaitingQueryText: true, 
       artIndex: 0,
-      numShuffle: 0
+      numShuffle: 0,
+      numVisits: 0
     };
   
   const user = await stateSetUserData(userId, currentState, teamId);
@@ -1068,10 +1075,17 @@ for (var i = 0; i < numChoices; i++) {
 
 // Listen for a button invocation with action_id `visit_button`
 app.action("visit_button", async ({ ack, body, context }) => {
+  var userId = body.user.id;
+	
+  var user = await stateGetUserData(userId);
+	
   // Acknowledge the button request
   ack();
 
-  // ack() and do nothing. this should get rid of the exclamation mark
+  user.numVisits++;
+	
+  stateSetUserData(userId, user);
+	
 });
 
 // Listen for a button invocation with action_id `shuffle_button`
