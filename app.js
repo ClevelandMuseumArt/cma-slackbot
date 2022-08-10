@@ -172,7 +172,7 @@ const initializePromptData = async () => {
 	      
 	for (const key in promptData.artworks) {
 	  for (const index in promptData.artworks[key]) {
-	    promptData.artworks[key][index].url += '?utm_source=slack_prompt';
+	    promptData.artworks[key][index].url += '?utm_source=slack_prompt&utm_medium=slack';
 	  }
 	}
 	      
@@ -482,7 +482,7 @@ async function exhibitionMessage(teamId) {
   var buttonBlock = headerBlocks.find(x => x.block_id === 'cma_button');
 
   if (buttonBlock) {
-    const artworkUrl = `https://www.clevelandart.org/art/${prompts.promptArtImageUrl.split('/')[3]}?utm_source=slack_exhibition`;
+    const artworkUrl = `https://www.clevelandart.org/art/${prompts.promptArtImageUrl.split('/')[3]}?utm_source=slack_exhibition&utm_medium=slack`;
     
     buttonBlock.elements[0].url = artworkUrl;
   }
