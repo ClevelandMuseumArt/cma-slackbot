@@ -170,12 +170,6 @@ const initializePromptData = async () => {
             promptData.artworks[choice.text] = res.data.data;
           });
 	      
-	for (const key in promptData.artworks) {
-	  for (const index in promptData.artworks[key]) {
-	    promptData.artworks[key][index].url += '?utm_source=slack_prompt&utm_medium=slack';
-	  }
-	}
-	      
       } 
     })
     .catch(error => {
@@ -533,7 +527,7 @@ async function exhibitionMessage(teamId) {
         userBlocks[1].title.text = userResponse;
         userBlocks[1].alt_text = artworkLabel;
         userBlocks[1].image_url = artworkImg;
-        userBlocks[2].elements[0].url = artworkUrl; //cma website
+        userBlocks[2].elements[0].url = artworkUrl + '?utm_source=slack_exhibition&utm_medium=slack'; //cma website
 
         // the totally stupid way you have to pass by value in JS
         var blockValue = JSON.parse(JSON.stringify(userBlocks));
@@ -806,7 +800,7 @@ async function wordSelection(word, userId, botToken, body) {
     }
     
     if (promptSelectionBlocks[i].block_id === "cma_button") {
-      promptSelectionBlocks[i].elements[0].url = user.artworkUrl;      
+      promptSelectionBlocks[i].elements[0].url = user.artworkUrl + '?utm_source=slack_prompt&utm_medium=slack';      
     }
   }
 
@@ -1152,7 +1146,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
     }
     
     if (promptSelectionBlocks[i].block_id === "cma_button") {
-      promptSelectionBlocks[i].elements[0].url = user.artworkUrl;      
+      promptSelectionBlocks[i].elements[0].url = user.artworkUrl + '?utm_source=slack_prompt&utm_medium=slack';      
     }    
   }
 
@@ -1229,7 +1223,7 @@ app.action("confirm_button", async ({ ack, body, context }) => {
       }
       
       if (confirmImageBlocks[i].block_id === "cma_button") {
-        confirmImageBlocks[i].elements[0].url = user.artworkUrl;      
+        confirmImageBlocks[i].elements[0].url = user.artworkUrl + '?utm_source=slack_prompt&utm_medium=slack';      
       }      
     }
 
