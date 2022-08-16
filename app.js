@@ -476,7 +476,7 @@ async function exhibitionMessage(teamId) {
   var buttonBlock = headerBlocks.find(x => x.block_id === 'cma_button');
 
   if (buttonBlock) {
-    const artworkUrl = `https://www.clevelandart.org/art/${prompts.promptArtImageUrl.split('/')[3]}?utm_source=slack_exhibition&utm_medium=slack`;
+    const artworkUrl = `https://www.clevelandart.org/art/${prompts.promptArtImageUrl.split('/')[3]}?utm_source=slack_exhibition&utm_medium=slack&utm_campaign=artlens_for_slack`;
     
     buttonBlock.elements[0].url = artworkUrl;
   }
@@ -527,7 +527,7 @@ async function exhibitionMessage(teamId) {
         userBlocks[1].title.text = userResponse;
         userBlocks[1].alt_text = artworkLabel;
         userBlocks[1].image_url = artworkImg;
-        userBlocks[2].elements[0].url = artworkUrl + '?utm_source=slack_exhibition&utm_medium=slack'; //cma website
+        userBlocks[2].elements[0].url = artworkUrl + '?utm_source=slack_exhibition&utm_medium=slack&utm_campaign=artlens_for_slack'; //cma website
 
         // the totally stupid way you have to pass by value in JS
         var blockValue = JSON.parse(JSON.stringify(userBlocks));
@@ -800,7 +800,7 @@ async function wordSelection(word, userId, botToken, body) {
     }
     
     if (promptSelectionBlocks[i].block_id === "cma_button") {
-      promptSelectionBlocks[i].elements[0].url = user.artworkUrl + '?utm_source=slack_prompt&utm_medium=slack';      
+      promptSelectionBlocks[i].elements[0].url = user.artworkUrl + '?utm_source=slack_prompt&utm_medium=slack&utm_campaign=artlens_for_slack';      
     }
   }
 
@@ -1146,7 +1146,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
     }
     
     if (promptSelectionBlocks[i].block_id === "cma_button") {
-      promptSelectionBlocks[i].elements[0].url = user.artworkUrl + '?utm_source=slack_prompt&utm_medium=slack';      
+      promptSelectionBlocks[i].elements[0].url = user.artworkUrl + '?utm_source=slack_prompt&utm_medium=slack&utm_campaign=artlens_for_slack';      
     }    
   }
 
@@ -1223,7 +1223,7 @@ app.action("confirm_button", async ({ ack, body, context }) => {
       }
       
       if (confirmImageBlocks[i].block_id === "cma_button") {
-        confirmImageBlocks[i].elements[0].url = user.artworkUrl + '?utm_source=slack_prompt&utm_medium=slack';      
+        confirmImageBlocks[i].elements[0].url = user.artworkUrl + '?utm_source=slack_prompt&utm_medium=slack&utm_campaign=artlens_for_slack';      
       }      
     }
 
