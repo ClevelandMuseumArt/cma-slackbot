@@ -768,7 +768,7 @@ async function wordSelection(word, userId, botToken, body) {
   user.keyword = word;
   user.awaitingTextResponse = true;
   user.awaitingQueryText = false;
-  user.lastImgUrl = featured.images.web.url;
+  user.lastImgUrl = featured.image_assets.primary_image.web.url;
   user.lastImgCreator = creators;
   user.lastImgTitle = featured.title;
   user.artworkUrl = featured.url;
@@ -1112,7 +1112,7 @@ app.action("shuffle_button", async ({ ack, body, context }) => {
   var creators = formatCreators(featured.creators);
 
   user.awaitingTextResponse = true;
-  user.lastImgUrl = featured.images.web.url;
+  user.lastImgUrl = featured.image_assets.primary_image.web.url;
   user.lastImgCreator = creators;
   user.lastImgTitle = featured.title;
   user.artworkUrl = featured.url;
