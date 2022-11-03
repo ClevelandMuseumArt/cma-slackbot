@@ -476,7 +476,10 @@ async function exhibitionMessage(teamId) {
   var buttonBlock = headerBlocks.find(x => x.block_id === 'cma_button');
 
   if (buttonBlock) {
-    const artworkUrl = `https://www.clevelandart.org/art/${prompts.promptArtImageUrl.split('/')[3]}?utm_source=slack_exhibition&utm_medium=slack&utm_campaign=artlens_for_slack`;
+    // Since the we don't explicitly provide the accession number of the prompt images, we have to parse it out
+    // of the possible image url formats.
+    const acc_nbr = [...prompts.promptArtImageUrl.split('/')].pop().split('_')[0];
+    const artworkUrl = `https://www.clevelandart.org/art/${acc_nbr}?utm_source=slack_exhibition&utm_medium=slack&utm_campaign=artlens_for_slack`;
     
     buttonBlock.elements[0].url = artworkUrl;
   }
