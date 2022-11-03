@@ -741,6 +741,23 @@ async function wordSelection(word, userId, botToken, body) {
     // blocks for everybody
     var promptInvokeBlocks = JSON.parse(JSON.stringify(prompt_invoke_template.blocks));
 
+    // ugh, have to re-populate prompts in case app restarted
+    var titleBlock = promptInvokeBlocks.find(x => x.block_id === 'prompt_title');
+  
+    if (titleBlock) titleBlock.text.text = `Today's Exhibition: *${prompts.title}*`;
+    
+    var imageBlock = promptInvokeBlocks.find(x => x.block_id === 'prompt_image');
+    
+    if (imageBlock) {
+      imageBlock.image_url = prompts.promptArtImageUrl.trim();
+      imageBlock.alt_text = prompts.promptArtTitle;      
+    }
+
+    var promptBlock = promptInvokeBlocks.find(x => x.block_id === 'prompt_prompt');
+    
+    if (promptBlock) promptBlock.text.text = prompts.prompt;
+    // end re-pop
+
     promptInvokeBlocks.pop();
     
     const updateResult = await app.client.chat.update({
