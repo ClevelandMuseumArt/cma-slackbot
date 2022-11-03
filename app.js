@@ -478,6 +478,9 @@ async function exhibitionMessage(teamId) {
   if (buttonBlock) {
     // Since the we don't explicitly provide the accession number of the prompt images, we have to parse it out
     // of the possible image url formats.
+    // This will work for:
+    // https://openaccess-cdn.clevelandart.org/1984.223/1984.223_web.jpg
+    // https://openaccess-api.clevelandart.org/api/collection/artworks/image/web/1984.223
     const acc_nbr = [...prompts.promptArtImageUrl.split('/')].pop().split('_')[0];
     const artworkUrl = `https://www.clevelandart.org/art/${acc_nbr}?utm_source=slack_exhibition&utm_medium=slack&utm_campaign=artlens_for_slack`;
     
