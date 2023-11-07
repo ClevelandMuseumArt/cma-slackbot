@@ -165,7 +165,9 @@ const initializePromptData = async () => {
         
         const limitDeptTo = parseInt(process.env['LIMIT_DEPT_TO']);
         
-        axios.get(`${openaccessUrl}?q=${thisQuery}&has_image=1&limit=500&limit_depts_to=${limitDeptTo}`)
+        // make sure query only returns artwork with images and doesn't strip special chars so that
+        // lucene-style syntax works
+        axios.get(`${openaccessUrl}?q=${thisQuery}&no_strip=1&has_image=1&limit=500&limit_depts_to=${limitDeptTo}`)
           .then((res) => {
             promptData.artworks[choice.text] = res.data.data;
           });
